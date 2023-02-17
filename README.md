@@ -63,3 +63,156 @@ with `clang -c program1.c`, that will be neccesairly later in debuging in __lldb
 no idea how to do this, because all of my linking, object creating and compiling was with higher order 
 programming languages, so I relied on _Copilot_ code generation. It also made me a clean task for easier 
 management.
+
+## printf();
+
+In C programming language, the `printf()` function is used to output data to the console or terminal window. 
+It is a powerful function that can be used to format and print various types of data, including text, numbers, 
+and variables. Some of the things you can do with the `printf()` function include:
+
+1. Print text: You can use the `printf()` function to output any text that you want to the console. For example,
+`printf("Hello, world!");` will output the text "Hello, world!" to the console.
+
+2. Print variables: You can use the `%d` format specifier to print integer variables, `%f` to print float variables,
+`%c` to print character variables, and `%s` to print string variables. For example, `int x = 10; printf("The value of x is %d", x);` will output "The value of x is 10" to the console.
+
+3. Format output: You can use a wide range of formatting options with the `printf()` function to control how 
+your output is displayed. For example, you can specify the width and precision of numbers, add leading zeros, 
+and control the alignment of your output.
+
+### Precision of floating point bumber
+
+To display a floating point number with a precision of two decimal places using the `printf()` function in C, 
+you can use the `%0.2f` format specifier.
+
+```c
+#include <stdio.h>
+
+int main() {
+    float number = 3.14159;
+    printf("The number is: %.2f\n", number);
+    return 0;
+}
+```
+
+This will display number `3.14`
+
+### Leading zeros
+
+To display a number with six leading zeros in C, you can use the `%06d` format specifier with the `printf()` 
+function.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int number = 42;
+    printf("The number with six leading zeros is: %06d\n", number);
+    return 0;
+}
+```
+
+This will display number 000042
+
+### Hexadecimal output
+
+#### Integer
+
+To display an integer in hexadecimal format using the `printf()` function in C, you can use the `%x` format 
+specifier.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int number = 255;
+    printf("The number in hexadecimal format is: %x\n", number);
+    return 0;
+}
+```
+
+In this example, the number variable is an integer type with the value of 255. The `printf()` function is used 
+to output the value of number in hexadecimal format using the format specifier `%x`. The output will be 
+"The number in hexadecimal format is: ff".
+
+### Float
+
+Note that the `%x` format specifier only works with integers. If you want to display a floating point number 
+in hexadecimal format, you can use the `%a` format specifier instead. For example:
+
+```c
+#include <stdio.h>
+
+int main() {
+    float number = 3.14159;
+    printf("The number in hexadecimal format is: %a\n", number);
+    return 0;
+}
+```
+
+In this example, the number variable is a floating point type with the value of _3.14159_. The `printf()`
+function is used to output the value of number in hexadecimal format using the `%a` format specifier. 
+The output will be "The number in hexadecimal format is: 0x1.921fap+1".
+
+### String
+
+To display a string as a sequence of hexadecimal values using the `printf()` function in C, you can use the 
+`%x` or `%X` format specifier in combination with a loop that iterates through each character in the string.
+
+Here's an example code snippet that shows how to do this using the %x format specifier:
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char str[] = "Hello, world!";
+    int len = strlen(str);
+    for (int i = 0; i < len; i++) {
+        printf("%x ", str[i]);
+    }
+    printf("\n");
+    return 0;
+}
+```
+
+In this example, the str variable is a string that contains the text "Hello, world!". The len variable is the 
+length of the string, which is obtained using the `strlen()` function. The for loop iterates through each 
+character in the string, and the `printf()` function is used to output the hexadecimal value of each character 
+using the `%x` format specifier. The output will be a sequence of hexadecimal values, one for each character 
+in the string.
+
+Note that the `%x` format specifier displays the hexadecimal value of each character using lowercase letters 
+(a-f) for values greater than 9. If you want to use uppercase letters (A-F) instead, you can use the `%X` format
+specifier.
+
+3. ...continur on what `printf()` can do...
+
+4. Print special characters: You can use special escape sequences to print characters such as tabs, newlines, 
+and quotes. For example, `printf("This is a tab:\tAnd this is a newline:\n");` will output "This is a tab: And
+this is a newline:" to the console.
+
+### Ring a bell
+
+```c
+#include <stdio.h>
+
+int main() {
+    printf("\a");
+    return 0;
+}
+```
+
+This program will ring a system bell if it can. Check it out! Here is some trivia: In this example, the `\a` 
+escape sequence is used to generate the ASCII bell character, which will cause the system to ring the bell. 
+The `printf()` function is used to output the bell character to the console. When you run this program, the 
+system will ring the bell once.
+
+Note that the behavior of the `\a` escape sequence may vary depending on the system and terminal emulator 
+you are using. In some cases, it may not actually ring the system bell, but instead generate a visual or 
+auditory signal in some other way.
+
+5. Use conditionals: You can use conditional statements within the printf() function to output different text
+based on the value of a variable. For example, `int x = 10; printf("x is %s", x > 5 ? "greater than 5" : "less than or equal to 5");` will output "x is greater than 5" to the console.
+
+These are just a few examples of what you can do with the printf() function in C programming language. It is a versatile and powerful function that you can use to output all kinds of data to the console.
