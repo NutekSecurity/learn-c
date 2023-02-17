@@ -216,3 +216,96 @@ auditory signal in some other way.
 based on the value of a variable. For example, `int x = 10; printf("x is %s", x > 5 ? "greater than 5" : "less than or equal to 5");` will output "x is greater than 5" to the console.
 
 These are just a few examples of what you can do with the printf() function in C programming language. It is a versatile and powerful function that you can use to output all kinds of data to the console.
+
+## C operators
+
+In C programming language, there are different types of operators that can be used to perform various operations on values. Here are some of the most commonly used operators in C:
+
+### Arithmetic Operators:
+
+`+` : Addition
+`-` : Subtraction
+`*` : Multiplication
+`/` : Division
+`%` : Modulo (Remainder)
+
+### Comparison Operators:
+
+`==` : Equal to
+`!=` : Not equal to
+`<` : Less than
+`>` : Greater than
+`<=` : Less than or equal to
+`>=` : Greater than or equal to
+
+### Logical Operators:
+
+`&&` : Logical AND
+`||` : Logical OR
+`!` : Logical NOT
+
+### Assignment Operators:
+
+`=` : Assign value
+`+=` : Add and assign value
+`-=` : Subtract and assign value
+`*=` : Multiply and assign value
+`/=` : Divide and assign value
+`%=` : Modulo and assign value
+
+### Increment and Decrement Operators:
+
+`++` : Increment by 1
+`--` : Decrement by 1
+
+### Bitwise Operators:
+
+`&` : Bitwise AND
+`|` : Bitwise OR
+`^` : Bitwise XOR
+`~` : Bitwise NOT
+`<<` : Bitwise left shift
+`>>` : Bitwise right shift
+
+### Ternary Operator:
+
+`? :` : Conditional operator (also known as ternary operator)
+
+These are some of the most commonly used operators in C. Understanding how to use these operators can help you 
+perform various operations on data in your C programs.
+
+### Pointers 
+
+Pointers are used to store memory addresses of variables. To manipulate and access the data stored at those 
+memory locations, pointer operators are used. Here are some of the most commonly used pointer operators in C:
+
+`&` operator:
+
+The `&` operator is used to get the address of a variable.
+Example: `int x = 10; int* ptr = &x;` will assign the address of the variable x to the pointer ptr.
+
+`*` operator:
+
+The * operator is used to access the value stored at the memory address pointed to by a pointer.
+Example: `int x = 10; int* ptr = &x; int y = *ptr;` will assign the value of x (which is 10) to the variable y.
+
+`++` and `--` operators:
+
+The `++` and `--` operators can be used to increment or decrement the memory address pointed to by a pointer.
+Example: `int arr[] = {1, 2, 3}; int* ptr = arr; ptr++;` will increment the pointer ptr to point to the next 
+element in the array.
+
+`->` operator:
+
+The `->` operator is used to access a member of a structure or union through a pointer.
+Example: `struct Point { int x, y; }; struct Point p = {1, 2}; struct Point* ptr = &p; int x = ptr->x;` 
+will assign the value of p.x (which is 1) to the variable x.
+
+`[]` operator:
+
+The `[]` operator can be used to access elements of an array through a pointer.
+Example: `int arr[] = {1, 2, 3}; int* ptr = arr; int x = ptr[1];` will assign the value of arr[1] (which is 2) 
+to the variable x.
+
+These are some of the most commonly used pointer operators in C. Understanding how to use these operators can 
+help you manipulate and access data stored in memory through pointers.
