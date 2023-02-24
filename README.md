@@ -1119,8 +1119,7 @@ FROM fedora:latest
 WORKDIR /app
 
 RUN dnf groupinstall -y 'Development Tools'
-RUN dnf install ruby && gem install bundler
-
+RUN dnf install -y ruby && gem install bundler
 RUN bundle install
 
 EXPOSE 9292 # not neccesairly needed, good practice
@@ -1245,6 +1244,183 @@ will load the library into memory at runtime and resolve any symbols that the pr
 This allows programs to share code and data with dynamic libraries, which can help reduce memory usage and 
 make it easier to update and maintain the shared code.
 
+## Back to Dockerfile
+
+Now please get back to the Dockerfile we created and change so it look like the file below and run `docker build --tag c-dev .`. 
+This will create a c-dev image that you can run with `docker run --rm -it c-dev`. If it fails, you might need to run 
+again `docker build --no-chache -t c-dev`
+
+```Dockerfile
+FROM fedora:latest
+
+WORKDIR /app
+
+RUN dnf groupinstall -y 'Development Tools'
+RUN dnf install -y ruby libcurl-devel json-c-devel && gem install bundler
+
+ENTRYPOINT [ "make test" ]
+```
+Be aware that I have added `libcurl` and `json-c` _*-devel_ libraries that we will use
+
+This will inevitebly fail. But don't worry, we have just satisfied the red rule 💄. Now it's time to create a
+Makefile for the tests we wil have.  You might start like this `touch Makefile` or more verbose `nvim Makefile`.
+You can also have Visual Studio Code installed in your `PATH` variable (look into command pallete and type `code`).
+I do not recommend a bigger IDE, like Visual Studio or Jet Brains for this because they are simply too big to fit
+into 128 GB SSD drive. Beside that, it's just text. Maybe if I find courage, I might touch on graphic and UI design,
+but for now we're just talking with machine (ChatGPT, remember?)
+
+```Makefile
+CC = cc
+CFLAGS = -std=c11 -Wall -Wextra -Werror 
+CURLCFLAGS = `curl-config --cflags`
+CURLFLAGS = `curl-config --libs`
+JSONCFLAGS = `pkg-config --cflags json-c`
+JSONFLAGS = `pkg-config --libs json-c`
+
+SRC = curl.c
+CURL = curl
+UNITY_SRC = ../unity/unity.c
+
+TEST = test
+DEBUG = debug
+.PHONY: all clean test
+
+# create curl library
+all: $(SRC)
+	$(CC) $(CFLAGS) $(CURLCFLAGS) $(JSONCFLAGS) -fPIC -shared $^ -o $(CURL) $(CURLFLAGS) $(JSONFLAGS)
+
+# create test executable in debug mode
+$(DEBUG): $(TEST).c $(UNITY_SRC)
+	$(CC) $(CFLAGS) -I../unity $(CURLCFLAGS) $(JSONCFLAGS) -g $^ -o $@ $(CURLFLAGS) $(JSONFLAGS)
+
+# run test executable
+$(TEST): $(TEST).c $(UNITY_SRC)
+	$(CC) $(CFLAGS) -I../unity $(CURLCFLAGS) $(JSONCFLAGS) $^ -o $@ $(CURLFLAGS) $(JSONFLAGS)
+	./$(TEST)
+
+# clean up
+clean:
+	rm -f *.o
+	rm -f $(TEST)
+	rm -rf *.dSYM
+	rm -f $(DEBUG)
+	rm -f $(CURL)
+```
+
+This is a lot of code, but it is intended to help you in managing all the compilation and linking process
+that otherwise wouldn't be such simple task. Here we have, starting from top `CC` which sets the used compiler
+to available alias of gcc, cc what was the standard command for `C compiler`. Then I have decided to add
+compiler flags that defines the C standard to be c11, and to treat warnings as errors, so those who will go then
+straight to `Rust` programming language might feel already at home with this, little, extra hand holding.
+After that comes library specific code which I save to respective variables so they might be reused by tasks, after
+all `Make` is a task runner like `Grunt` or `Gulp` (which you might encounter in `Java Script` world).
+
+Next come variables holding main part of the C library we'll dissect, curl target, curl.c source code file and
+path to Unity testing framework source code we have left from previous - grades - example. We also use `.PHONY`
+target to specify that even if there is a file with the same name as the target itself, the task must be run again.
+
+Now the time has come for tasks aka targets itself. The first three are ment to compile different parts of the library.
+The `all` target compiles only the `curl` library. `DEBUG` target creates debugging ready version of `TEST` target,
+so you might dive deep into troubleshooting. The main difference here is the usage of `-g` flag, that saves
+debugging symbols into output file. The `TEST` target produces a test executable and runs it, and it's much faster than
+testing in Ruby, what you will see and compare yourself.
+
+The last target: `clean` is intended for maintenance purpose. Run it if you want to delete all the executables and libraries.
+
 ### RuboCop
 
-[RuboCop](https://rubocop.org/)
+- [RuboCop](https://rubocop.org/) is a tool that beautifies your code written in Ruby. 
+- [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) is a tool that prettifies your C, C++, Java,
+Java Script, JSON, Objective-C, Protobuf and C# code.
+
+## Continuosly update Ruby program with output from C program
+
+To continuously receive updates from a C function in a Ruby code, you can use interprocess communication
+(IPC) mechanisms such as pipes, sockets, or shared memory. Here's an example using pipes:
+
+1. In the C program, create a pipe using the pipe function from the unistd.h library. This creates two file
+descriptors, one for reading from the pipe (pipe_fd[0]) and one for writing to the pipe (pipe_fd[1]).
+
+2. Write the updates to the pipe using the write function.
+
+3. In the Ruby code, read from the pipe using the IO.read method.
+
+4. Repeat steps 2-3 in a loop to continuously receive updates.
+
+Here's an example implementation:
+
+C program:
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+    int pipe_fd[2];
+    pipe(pipe_fd);
+
+    int i = 0;
+    while (1) {
+        i++;
+        char buffer[100];
+        sprintf(buffer, "Update %d", i);
+        write(pipe_fd[1], buffer, sizeof(buffer));
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+
+Ruby code:
+
+```ruby
+pipe_rd, pipe_wr = IO.pipe
+
+pid = spawn("path/to/c/program", out: pipe_wr)
+
+while true
+  update = pipe_rd.read(100)
+  puts update
+end
+```
+
+In this example, the C program continuously writes updates to the pipe every second, and the Ruby code
+continuously reads from the pipe and prints the updates. The spawn method is used to execute the C program
+as a separate process, and its out option redirects the program's standard output to the pipe's write end.
+
+## Use GitHub Actions to publish your Docker container to hub.docker.com
+
+```yaml
+name: ci
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          # save this in your GitHub settings
+          username: ${{ secrets.DOCKER_USERNAME }}
+          # get your token from hub.docker.com profile
+          password: ${{ secrets.DOCKER_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: username/image-name:tag
+```
