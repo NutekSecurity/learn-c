@@ -22,6 +22,8 @@ Overall program1 will print 7 times this sentence in different color:
 Cześć Nutek, mówi Szymon!
 ```
 
+[![asciicast](https://asciinema.org/a/562498.svg)](https://asciinema.org/a/562498?autoplay=1&speed=2&theme=solarized-dark)
+
 ### Why?
 
 I'm reading __Learn C The Hard Way__ by _Zed Shaw_ probably availabla here - `help@learncodethehardway.org`.
@@ -1028,6 +1030,8 @@ last tool I have introduced to you, `git`. It's ment to help collaborate and sha
 usege surpass that, and now even books are written using git, just like this one. What it do?
 It keeps track of your changes to files, it is able to send data to git servers, such as [GitHub](https://github.com) or [GitLab](https://gitlab.com/kalilinux). Unfortunately, or not, it doesn't do this automatically.
 
+[![asciicast](https://asciinema.org/a/562489.png)](https://asciinema.org/a/562489?autoplay=1&speed=2&theme=solarized-dark)
+
 1. Initialize new .git repository (note that you do this only once, and some tools do this for you)
 
     - `git init`
@@ -1143,6 +1147,8 @@ because the image is of 5.33 MB. Now that you have the cURL program from image, 
 docker run --rm -it rancher/curl ifconfig.me
 ```
 
+[![asciicast](https://asciinema.org/a/562493.svg)](https://asciinema.org/a/562493?autoplay=1&theme=solarized-dark)
+
 What you should expect? You will get the text response with your current IP number terminated by `%`.
 
 ## Shared and dynamic libraries
@@ -1241,4 +1247,4 @@ make it easier to update and maintain the shared code.
 
 ### RuboCop
 
-[RuboCop](https://rubocop.org/
+[RuboCop](https://rubocop.org/)
