@@ -1,5 +1,11 @@
 # learn-c
-My code while learning C and some data
+
+## My code while learning C and some data for you
+
+Szymon Bronisław Błaszczyński © 2023 museyoucoulduse@gmail.com
+
+___
+
 
 ## first-one
 
@@ -80,7 +86,7 @@ and variables. Some of the things you can do with the `printf()` function includ
 your output is displayed. For example, you can specify the width and precision of numbers, add leading zeros, 
 and control the alignment of your output.
 
-### Precision of floating point bumber
+### Precision of floating point number
 
 To display a floating point number with a precision of two decimal places using the `printf()` function in C, 
 you can use the `%0.2f` format specifier.
@@ -633,6 +639,8 @@ programming. IDEs like CodeBlocks, Dev-C++, or Visual Studio Code can be helpful
 debugging code. Also, get familiar with tools like GCC and Makefile, which can be useful in compiling 
 and building C code.
 
+    - [Neovim](https://neovim.io/)
+
 5. Keep learning and updating yourself: C language is a foundational language for many other programming 
 languages, so it's important to keep learning and updating yourself with the latest developments in C 
 language. Join online forums and communities, participate in discussions, and read blogs and articles 
@@ -653,7 +661,7 @@ to the computer using commands, not being source of meta data - you just embark 
 **dev**, so act like one and create yourself a folder where your source code will live and then, write in 
 terminal `git clone https://github.com/ThrowTheSwitch/Unity`, press `<Enter>`, and that's it. You just 
 cloned your first open source project. This one is unit testing framework that will help us get to know 
-what's working in out programs and what's not. _Don't Reapeat Yourself_ and write down the exact flow of
+what's working in our programs and what's not. _Don't Reapeat Yourself_ and write down the exact flow of
 the commands and maybe some additional notes what happened, because it's important.
 
 ### Unity, unit testing framework
@@ -813,7 +821,7 @@ Here is the `Makefile` to cheer you up, with a little explanation:
 
 ```Makefile
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -Werror -I../unity
+CFLAGS = -std=c11 -Wall -Wextra -Werror -I../unity
 
 SRC = grasshoper-gradebook.c
 UNITY_SRC = ../unity/unity.c
@@ -869,3 +877,368 @@ compiling `$(SRC)` and `$(UNITY_SRC)` together.
 
 * `clean: rm -f $(TARGET)`: This declares the clean target, which removes the `$(TARGET)` file when run.
 
+## Dockerfile
+
+Docker is a popular open-source platform for building, shipping, and running distributed applications. 
+It allows developers to package applications and their dependencies into a portable container that can
+run on any machine, regardless of the underlying operating system and hardware.
+
+Here are a few common use cases for Docker:
+
+1. Application deployment: Docker simplifies the deployment process by allowing developers to package their
+applications and their dependencies into a single container. This container can then be easily deployed 
+to any environment, whether it's a development machine, staging environment, or production server.
+
+2. Microservices architecture: Docker's lightweight containers make it easier to break down monolithic
+applications into smaller, independently deployable microservices. Each microservice can be packaged 
+and deployed as a separate container, allowing for greater flexibility and scalability.
+
+3. Continuous integration and deployment (CI/CD): Docker can be used in a CI/CD pipeline to automate 
+the build, test, and deployment process. Developers can create a Docker image of their application, 
+and then use that image to deploy the application to multiple environments automatically.
+
+4. Development environments: Docker can be used to create consistent development environments across 
+multiple machines. Developers can create a Docker image that includes all the tools and dependencies 
+they need to develop their applications, and then use that image to spin up development environments 
+on any machine.
+
+5. Cloud computing: Docker is widely used in cloud computing environments such as AWS, Google Cloud Platform,
+and Microsoft Azure. By using Docker containers, developers can create scalable, fault-tolerant applications
+that can run on cloud infrastructure.
+
+Overall, Docker provides a powerful tool for developers and system administrators to manage their
+applications and infrastructure, and is widely used in modern software development and deployment practices.
+
+From now on, I'm assuming you're using Linux, Unix or something like that. No, not really. As you've read
+you should probably get the impression that I'm going to ask you to install another tool. But that's not
+your oridinary LAMP server on your bare metal Windows box. You can have [Docker](https://www.docker.com/) 
+([Podman](https://podman.io/) too) on your Windows too. All you need is that `git` for source version control
+and OCI containers...
+
+### What is OCI container
+
+OCI (Open Container Initiative) container is a standard for container image format and runtime specification. 
+It is a set of open standards and specifications for creating, packaging, and running containerized 
+applications.
+
+The OCI was formed by a group of companies and organizations in the container ecosystem to create open 
+standards for container technology, and it is now a Linux Foundation project. The OCI container standard 
+defines a common specification for the format and runtime of container images, ensuring that they are 
+interoperable across different container runtimes.
+
+The OCI image format defines the structure and layout of container images, while the OCI runtime 
+specification defines how the container should be run and managed. The OCI standard provides an 
+interoperable, vendor-neutral container format that can be used by any container runtime, enabling 
+developers to build and distribute containerized applications without worrying about the underlying
+infrastructure.
+
+The OCI container standard is widely used by container platforms and orchestrators such as Docker,
+Kubernetes, and containerd, which use the standard to ensure that container images and runtimes are
+compatible and interoperable. By using the OCI standard, developers can ensure that their containerized
+applications can run on any container runtime that supports the standard, providing greater flexibility
+and portability.
+
+### What is Fedora
+
+Since my recent switch to dnf-based systems, I have tried CentOS Stream 9, Alma Linux, and Fedora, and this
+one, Fedora, will be the one I will use since it's aimed at more day-to-day usage and broader package
+coverage because it's base for the Red Hat Enterprise Linux package development management. The first
+step is Fedora, then, CentOS Stream and RHEL at last (also Rocky and Alma Linux).
+
+### What is DNF
+
+DNF (Dandified Yum) is a package manager used on some Linux distributions that are based on the Fedora
+operating system, such as Fedora itself, CentOS, and Red Hat Enterprise Linux (RHEL). It is the next
+generation version of the Yum package manager, which was the default package manager on these distributions
+prior to the introduction of DNF.
+
+DNF is designed to provide improved performance and usability compared to Yum, while still maintaining
+compatibility with existing Yum repositories and packages. Some of the key features of DNF include:
+
+1. Faster performance: DNF is designed to be faster and more efficient than Yum, with better performance
+for tasks such as package installation, updates, and dependency resolution.
+
+2. Improved dependency handling: DNF includes improved dependency handling, with better tracking of
+dependencies and conflicts between packages.
+
+3. Modular architecture: DNF has a modular architecture, which makes it easier to extend and customize
+for different use cases and environments.
+
+4. Better error handling: DNF includes improved error handling, with more informative error messages
+and better error reporting.
+
+5. Support for other package formats: DNF can also work with other package formats besides the RPM
+format used on Fedora-based systems, such as the Snappy format used on Ubuntu.
+
+Overall, DNF provides a modern, powerful package management tool for Fedora-based systems, with
+improved performance and usability compared to its predecessor, Yum.
+
+### What is Linux
+
+Linux is an open-source operating system kernel created by Linus Torvalds in 1991, and is the basis
+for many popular Linux-based operating systems, commonly referred to as "Linux distributions". 
+Linux is a Unix-like operating system, which means it shares many similarities with the original
+Unix operating system, such as a hierarchical file system, a command-line interface, and a focus
+on modular design and composability.
+
+Linux is a popular choice for both personal and enterprise computing, as it is highly customizable,
+secure, and can run on a wide range of hardware, from embedded devices and smartphones to servers and
+supercomputers. Linux is widely used for web servers, cloud computing, scientific research, and
+embedded systems, among other applications.
+
+One of the key strengths of Linux is its open-source nature, which means that the source code is
+freely available and can be modified and distributed by anyone. This has led to a vibrant ecosystem
+of developers, companies, and communities working together to improve and maintain Linux, resulting
+in a highly stable, reliable, and flexible operating system.
+
+Linux is also known for its wide range of available software, including many free and open-source
+applications, making it a popular choice for developers and users who value freedom, flexibility,
+and community-driven innovation.
+
+### What is GNU/Linux
+
+GNU/Linux is a term used to refer to a complete operating system that is built on top of the Linux
+kernel and includes a set of GNU tools and software. The GNU project was started by Richard Stallman
+in 1983, with the goal of creating a free and open-source software ecosystem, and has since grown
+into a large and influential community of developers, users, and advocates.
+
+The Linux kernel, created by Linus Torvalds in 1991, provides the low-level services and interfaces
+that allow the operating system to interact with the hardware of a computer or other device. The GNU
+tools and software, which were developed independently of the Linux kernel, provide the higher-level
+functionality that is typically associated with an operating system, such as user interfaces, file
+systems, utilities, and programming tools.
+
+The combination of the Linux kernel and the GNU software creates a powerful and flexible operating
+system that is widely used in both personal and enterprise computing. The open-source nature of GNU/Linux
+has led to a vibrant ecosystem of developers, companies, and communities that contribute to its
+development, support, and distribution, resulting in a highly customizable, reliable, and secure
+operating system.
+
+GNU/Linux is used in a wide range of applications, from personal desktops and laptops to servers,
+mobile devices, and embedded systems. It is known for its stability, security, and flexibility,
+as well as for the wide range of available software and the passionate community of users and
+developers who support it.
+
+### Sum up the briefing
+
+I hope that you now see, that what we'll be using is really useful and combinig all the skills
+you will really distinguish yourself in the community so you might do your work faster, organize
+better and deliver in full, not in parts. Now might be a good time to get you up and going with the
+last tool I have introduced to you, `git`. It's ment to help collaborate and share source code, but it's
+usege surpass that, and now even books are written using git, just like this one. What it do?
+It keeps track of your changes to files, it is able to send data to git servers, such as [GitHub](https://github.com) or [GitLab](https://gitlab.com/kalilinux). Unfortunately, or not, it doesn't do this automatically.
+
+1. Initialize new .git repository (note that you do this only once, and some tools do this for you)
+
+    - `git init`
+    - you might have to set your username and email
+        * git config --global user.name "FIRST_NAME LAST_NAME"
+        * git config --global user.email "MY_NAME@example.com"
+
+2. Stage your files for commit
+    
+    - `git add path/to/your/file another/file .gitignore` or
+    - `git add *` - this will add all files except those in `.gitignore` but not always all, so check with:
+    - `git status`
+
+3. Commit your change
+
+    - `git commit -m "Initial commit"`, where `-m` stands for message
+
+4. Add remote
+
+    4.1. create git repository on GitHub, it may be private (for free)
+    4.2. follow the instructions on screen, or click the green button and copy the https link
+    4.3. `git add remote origin https://your.link.git`, origin stands for name of the remote
+
+5. Pull code from GitHub
+
+    5.1. `git status`, and note the branch you're currently on, or:
+    5.2. `git branch -l`, and check if the desired name is free
+    5.3. `git pull origin main --rebase`, this is usually the main or master branch,
+        but you might want to use another local branch, and `--rebase` option let's you
+        choose which changes you wish to preserve from upstream or local branch
+    
+    - you might need to merge branches, so do `git checkout main` to change to main branch,
+        and then, `git merge upstream`
+
+6. Push code to GitHub
+
+    - `git push origin main --set-upstream`, this will upload the code to GitHub and let you
+        use just `git push` to send source code to GitHub.
+
+### Repeat, what is git, elaborative description
+
+Git is a distributed version control system that allows developers to manage and track changes to code
+and other files over time. It was created by Linus Torvalds in 2005 to manage the development of the
+Linux kernel, and has since become one of the most widely used version control systems in the software
+development industry.
+
+Git enables multiple developers to collaborate on the same project by allowing them to create their own
+local copies (or "clones") of the code repository. Each developer can then make changes to their local 
+copy and push those changes back to the central repository. Git uses a system of branching and merging 
+to manage changes, allowing developers to work on different features or bug fixes in isolation and 
+then merge their changes back into the main codebase when they are ready.
+
+Some of the key features of Git include:
+
+- Distributed architecture: Git stores a complete copy of the code repository on each developer's machine,
+allowing them to work offline and reducing the risk of data loss or corruption.
+- Branching and merging: Git allows developers to create multiple "branches" of the codebase to work
+on separate features or bug fixes in isolation, and then merge those changes back into the main codebase
+when they are ready.
+- Version history: Git tracks every change made to the codebase, allowing developers to view a complete
+history of all changes and revert to previous versions if necessary.
+- Collaboration: Git enables multiple developers to work on the same project concurrently, sharing their
+changes and resolving conflicts as needed.
+
+Overall, Git is a powerful tool that enables developers to work more efficiently and collaboratively, 
+while also providing a robust and reliable system for managing and tracking changes to code over time.
+
+### When you're done
+
+After the initial setup of `Podman & git` you can spin up this simple container. It consist of `Fedora`, 
+GNU/Linux, `Development Tools` - our main focus here is `make` - for _Makefiles_ and `gcc` for __C__, 
+and `Ruby` - dynamic programing language. Why another language? I want to show how to call C code from
+other programming languages, and it's much more easier, and sane, to create a website using Ruby than using C.
+We will also explore using JSON in C and in Ruby. We will create a KISS website containing data
+download using `libcurl from ifconfig.me service and Apple Music API. Everything will be executed inside
+a container with much less configuration needed to be performed and much safer way to publish your code.
+We won't forget to make few unit tests, and to be honest, I'm learning this Test Driven Development with you.
+
+1. Create file named Dockerfile in a folder that is available to share in Docker or Podman. There you
+will store the rest of this new project.
+
+```Dockerfile
+FROM fedora:latest
+
+WORKDIR /app
+
+RUN dnf groupinstall -y 'Development Tools'
+RUN dnf install ruby && gem install bundler
+
+RUN bundle install
+
+EXPOSE 9292 # not neccesairly needed, good practice
+
+ENTRYPOINT [ "bundle exec rerun -- bundle exec rackup config.ru" ]
+```
+
+When you save this file in your system, then you can build it with `docker build --tag c-dev .` from the
+same directory of the `Dockerfile`. This will build for you a Docker image with `Fedora` system and
+development tools installed. To run this you use `docker run -it --name dev -v $(pwd):/app -p 9292:9292 c-dev`.
+This command will create a dev container (change name how you like it), from the
+build image. I have deliberatedly omitted --rm option, which would remove our container after stopping it.
+If you want to remove this container, use this commad: `docker rm --force dev`.
+
+Let's not jump quickly into conclusions, that this container will actually run. It wouldn't. 💄 RED -> 🐢 GREEN
+-> 💫 REFACTOR. Remember? I have story to be laid out, and you have a lesson to learn. Bear with me, a little bit longer.
+
+For the excuses I have another container that you can run, and it will be cURL image, the program that we will use,
+thus we stay in the scope of this excercise. To run cURL container you will simply use this command (you have to
+be connected to the Internet), so it before with `docker pull rancher/curl:latest`, this one will be very fast
+because the image is of 5.33 MB. Now that you have the cURL program from image, you can run it:
+
+```bash
+docker run --rm -it rancher/curl ifconfig.me
+```
+
+What you should expect? You will get the text response with your current IP number terminated by `%`.
+
+## Shared and dynamic libraries
+
+Dynamic and shared libraries are both types of libraries that contain code and data that can be shared among
+different programs. However, there are some key differences between these two types of libraries:
+
+1. Loading time: Dynamic libraries are loaded into memory at runtime when a program starts, whereas shared
+libraries are loaded at link time when a program is built. This means that dynamic libraries can be loaded
+and unloaded as needed, while shared libraries are loaded into memory for the entire lifetime of the program.
+
+2. Memory usage: Because dynamic libraries are loaded into memory at runtime, they can be loaded and unloaded
+as needed, which can help conserve memory usage. Shared libraries, on the other hand, are loaded into memory
+for the entire lifetime of the program, which can lead to higher memory usage.
+
+3. Linking: Dynamic libraries are linked dynamically at runtime, which means that the library can be updated
+without recompiling the entire program. Shared libraries, on the other hand, are linked statically at link
+time, which means that any changes to the library require recompiling the entire program.
+
+4. Platform independence: Dynamic libraries are platform-independent, which means that a single dynamic
+library can be used across multiple platforms without recompiling the library. Shared libraries, on the
+other hand, are platform-specific, which means that a separate shared library needs to be compiled for each
+platform.
+
+In summary, dynamic libraries are loaded at runtime, can be loaded and unloaded as needed, and are
+platform-independent, while shared libraries are loaded at link time, are loaded into memory for the
+entire lifetime of the program, and are platform-specific.
+
+### Compile shared library
+
+To compile a shared library from a C file, you can use the "-shared" flag with the GCC 
+(GNU Compiler Collection) command. Here's an example of how to do this:
+
+1. Write your C code in a file named "my_library.c". For example:
+
+```c
+int add_numbers(int x, int y) {
+    return x + y;
+}
+```
+
+2. Compile the C code as a shared library using the GCC command with the "-shared" flag:
+
+```bash
+gcc -shared -o libmy_library.so my_library.c
+```
+
+This will create a shared library file named "libmy_library.so" in the current directory.
+
+The "-shared" flag tells GCC to produce a shared library instead of an executable. The "-o" 
+flag specifies the output file name.
+
+Note that the file extension for shared libraries can vary depending on the platform. On Linux 
+and other Unix-like systems, the file extension is typically ".so". On macOS, the file extension 
+is typically ".dylib". On Windows, the file extension is typically ".dll".
+
+Once you have compiled the shared library, you can link it with other programs that use the library.
+
+### Compile dynamic library
+
+Dynamic libraries, also known as shared object files (or shared libraries on Windows), are libraries
+that are loaded into memory at runtime when a program starts or when the library is first used. Dynamic
+libraries can contain code and data that can be shared among different programs, which can help reduce
+the size of executables and reduce memory usage.
+
+1. Write your C code in a file named "my_library.c". For example:
+
+```c
+int add_numbers(int x, int y) {
+    return x + y;
+}
+```
+
+2. Compile the C code as a dynamic library using the GCC command with the "-fPIC" (position-independent code)
+and "-shared" flags:
+
+```bash
+gcc -fPIC -shared -o libmy_library.so my_library.c
+```
+
+This will create a dynamic library file named "libmy_library.so" in the current directory.
+
+The "-fPIC" flag tells GCC to generate position-independent code, which is required for building shared
+libraries. The "-shared" flag tells GCC to produce a dynamic library instead of an executable. The "-o"
+flag specifies the output file name.
+
+Note that the file extension for dynamic libraries can vary depending on the platform. On Linux and other
+Unix-like systems, the file extension is typically ".so". On macOS, the file extension is typically ".dylib".
+On Windows, the file extension is typically ".dll".
+
+Once you have compiled the dynamic library, you can load it into a program using a dynamic linker, such as 
+the "dlopen" function in C or the equivalent functions in other programming languages. The dynamic linker 
+will load the library into memory at runtime and resolve any symbols that the program needs from the library. 
+This allows programs to share code and data with dynamic libraries, which can help reduce memory usage and 
+make it easier to update and maintain the shared code.
+
+### RuboCop
+
+[RuboCop](https://rubocop.org/

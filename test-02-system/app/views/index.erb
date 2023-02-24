@@ -1,0 +1,108 @@
+<doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>C library C call from Ruby</title>
+    <%# Include the style.css %>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="main">
+  <h1>C library call from Ruby</h1>
+  <h2>Pre-requisites</h2>
+  <p>
+    How to compile a C library and call it from Ruby using FFI.
+    <pre>
+      <code>
+        // curl.c
+        
+        #include  &lt;curl/curl.h&gt;
+        ...
+        // compile with:
+        gcc -o curl -shared curl.c -lcurl
+        // or
+        gcc -o curl -shared curl.c -lcurl -fPIC
+        
+        # then in Ruby:
+        require 'ffi'
+        # Define the FFI interface to the curl() function in the shared library
+        module CurlLib
+          extend FFI::Library
+          ffi_lib './curl'
+          attach_function :curl, [:string], :string # [] is for arguments, :string is for return type
+        end
+        # to call the curl() function, use CurlLib.curl()
+        my_ip = CurlLib.curl('https://ifconfig.me')
+        puts "My IP is #{my_ip}"
+      </code>
+    </pre>
+    <h2>ifconfig.me</h2>
+    <p>
+      call - <strong>CurlLib.curl('https://ifconfig.me')</strong><br /><br />
+      Result:<br />
+      My IP is <%= curl %>
+    </p>
+    <h2>Apple Music API</h2>
+    <p>
+      call - <strong>CurlLib.curl('https://itunes.apple.com/lookup?id=1658237994')</strong><br /><br />
+      Example of calling a C library from Ruby using FFI.
+      Data returned by this website is in Java Script
+      Object Notation, JSON in short.<br />
+      <br />
+      JSON stands for JavaScript Object Notation, and it is a 
+      lightweight data interchange format. JSON is used to 
+      transmit data between a server and a web application as an alternative to XML.
+      <br />
+      <br />
+      JSON is easy for humans to read and write and is easy for 
+      machines to parse and generate. It is based on a subset 
+      of the JavaScript programming language, so it can be parsed 
+      by any modern programming language.
+      <br />
+      <br />
+      A JSON object is a collection of key/value pairs, where the 
+      keys are strings and the values can be any valid JSON data type, 
+      including strings, numbers, booleans, arrays, and other JSON objects.
+      <br />
+      <br />
+      Here is an example of a JSON object:
+
+      <pre>
+        <code>
+{
+    "name": "John Smith",
+    "age": 35,
+    "email": "john.smith@example.com",
+    "is_active": true,
+    "friends": ["Jane Doe", "Bob Johnson"]
+}
+        </code>
+      </pre>
+      In this example, "name", "age", "email", and "is_active" are keys, 
+      and "John Smith", 35, "john.smith@example.com", and true are their 
+      corresponding values. The "friends" key has an array of two strings as its value.
+      <br />
+      <br />
+      This is data extracted from Apple Music API:<br /><br />
+      <ul>
+        <li>Artist: <%= song_artist %></li>
+        <li>Song name: <%= song_name %></li>
+        <li>Song URL: <a href="<%= song_url %>" target="_blank">take me to the song</a></li>
+        <li>Artwork: <img src=<%= song_artwork %> /></li>
+        <li>
+          Preview:
+            <audio controls>
+              <source src=<%= song_preview %>>
+              Your browser does not support the audio element.
+            </audio>
+        </li>
+      </ul>
+      <br />
+            <br />
+      raw JSON:<br />
+      <pre>
+        <code>
+<%= song_json %>  
+        </code>
+      </pre>
+    </p>
+</body>

@@ -1,0 +1,4 @@
+-L/usr/local/Cellar/json-c/0.16/lib
+-ljson-c
+-I/usr/local/Cellar/json-c/0.16/include
+-I/usr/local/Cellar/json-c/0.16/include/json-c
