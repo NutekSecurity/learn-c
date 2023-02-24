@@ -1246,6 +1246,10 @@ make it easier to update and maintain the shared code.
 
 ## Back to Dockerfile
 
+This `Dockerfile` will eventually run our application so watch it closely as it changes.
+
+### Minimal Dockerfile
+
 Now please get back to the Dockerfile we created and change so it look like the file below and run `docker build --tag c-dev .`. 
 This will create a c-dev image that you can run with `docker run --rm -it c-dev`. If it fails, you might need to run 
 again `docker build --no-chache -t c-dev`
@@ -1268,6 +1272,11 @@ You can also have Visual Studio Code installed in your `PATH` variable (look int
 I do not recommend a bigger IDE, like Visual Studio or Jet Brains for this because they are simply too big to fit
 into 128 GB SSD drive. Beside that, it's just text. Maybe if I find courage, I might touch on graphic and UI design,
 but for now we're just talking with machine (ChatGPT, remember?)
+
+### Makefile, the task runner of the Empire
+
+We use `Makefile` to make our job easier. We "automate", or divide building tasks of the app to smaller, easier to
+manage pieces.
 
 ```Makefile
 CC = cc
@@ -1327,7 +1336,175 @@ testing in Ruby, what you will see and compare yourself.
 
 The last target: `clean` is intended for maintenance purpose. Run it if you want to delete all the executables and libraries.
 
-### RuboCop
+For the future reference, you might want to remember that using `pkg-config` with `--cflags` and `--libs` help in resolving
+dependencies you have to use in order to correctly compile your programs and libraries.
+
+### The test.c of our curl library
+
+After creating `Makefile` and using it's task `make test` as an `ENTRYPOINT` for `Dockerfile` we have almost set the
+thing in motion, but we lack C code right now. First we will implement unit tests. We're building cURL a-like
+library that can connect to external resources and fetch data from them using simple `GET` request. So we need
+to know the data and test against it. For example, we already tried cURL on `ifconfig.me` endpoint. It simply return
+our IP address, but, the IP address changes from user to user of the library. We can't hardcode just our IP. In funct
+we can't hardcode any IP, it would defeat the purpose of the unit test, and the library itself, to be reusable.
+Think of it like a virus. It want's to spread, in open source world you might want to share your code with the others
+and even if you're coding for yourself, your IP might change, what would happen then? Write tests for edge cases, like
+if the format is proper, if it contains desired parts, but not the exact match. Don't test for 1, test for a number.
+
+```c
+#include "../unity/unity.h"
+#include "curl.c"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+void setUp(void) {}
+
+void tearDown(void) {}
+
+void curl_should_returnUserIp(void) {
+  // invoke curl() function; it should return a string
+  // store result in a variable
+  // check if the variable is not NULL
+  // check if the variable is a valid ip address
+  // check if the variable has 4 parts
+  // check if the variable has 3 digits in each part
+  // check if the variable has a dot in each part
+  char *result = curl("ifconfig.me");
+  TEST_ASSERT_NOT_NULL_MESSAGE(result, "ip should not be null\n");
+  int i = 0;
+  // check if there is a dot in each part
+  char *token = strtok(result, ".");
+  while (token != NULL) {
+    // cast string to int
+    int part = atoi(token);
+    int digits[3];
+    // trick to get digits of a number
+    digits[0] = part / 100;
+    digits[1] = (part / 10) % 10;
+    digits[2] = part % 10;
+    for (int i = 0; i < 3; i++) {
+      // check if digit is a number, append '0' to get ascii value
+      TEST_ASSERT_TRUE_MESSAGE(isdigit(digits[i] + '0'),
+                               "ip should be a number\n");
+    }
+    // check if there is a dot in each part
+    token = strtok(NULL, ".");
+    // keep track of how many parts there are
+    i++;
+  }
+  TEST_ASSERT_EQUAL_INT_MESSAGE(4, i, "ip should have 4 parts\n");
+  // should have null at the end
+  TEST_ASSERT_NOT_NULL_MESSAGE(strchr(result, '\0'),
+                               "Ip is not null-terminated");
+}
+
+void curl_should_returnSetAndSettingsVol9(void) {
+  char *result = curl("https://itunes.apple.com/lookup?id=1658237994");
+  TEST_ASSERT_NOT_NULL_MESSAGE(result, "result should not be null\n");
+  TEST_ASSERT_NOT_NULL_MESSAGE(strchr(result, '\0'),
+                               "result is not null-terminated");
+  // check if there is a string "Set and Settings, Vol. 9"
+  // check if there is a string "Neosb"
+  TEST_ASSERT_NOT_NULL_MESSAGE(
+      strstr(result, "Set and Settings, Vol. 9"),
+      "result should contain 'Set and Settings, Vol. 9'\n");
+  TEST_ASSERT_NOT_NULL_MESSAGE(strstr(result, "Neosb"),
+                               "result should contain 'Neosb'\n");
+  // check if there is a string "1658237994"
+  TEST_ASSERT_NOT_NULL_MESSAGE(strstr(result, "1658237994"),
+                               "result should contain '1658237994'\n");
+  // check if last character is a null terminator
+  TEST_ASSERT_NOT_NULL_MESSAGE(strchr(result, '\0'),
+                               "result is not null-terminated");
+  TEST_ASSERT_EQUAL_CHAR_MESSAGE('\n', result[strlen(result) - 1],
+                                 "result should end with a new line\n");
+  // check if second last character is a new line
+
+  TEST_ASSERT_EQUAL_CHAR_MESSAGE('\n', result[strlen(result) - 2],
+                                 "result should end with a new line\n");
+  // check if third last character is a new line
+  TEST_ASSERT_EQUAL_CHAR_MESSAGE('\n', result[strlen(result) - 3],
+                                 "result should end with a new line\n");
+  // check if fourth last character is a curly bracket
+  TEST_ASSERT_EQUAL_CHAR_MESSAGE('}', result[strlen(result) - 4],
+                                 "result should end with a curly bracket\n");
+}
+
+int main(void) {
+  UNITY_BEGIN();
+  RUN_TEST(curl_should_returnUserIp);
+  RUN_TEST(curl_should_returnSetAndSettingsVol9);
+  return UNITY_END();
+}
+```
+
+Here I have included two sources of information we test against: IP number obtained from (**thank you**) `ifconfig.me`,
+and a second one, JSON object from Apple Music API. Both are free to use websites that provide machine readable
+messages that after some tuning can turn into human readable data. And as for every rule, there are exceptions.
+First of all. If you are sure that the message will never change, and you want to test the functionality of the
+service. I have included in my `test.c` code three examples. I know that my song is named Set and Settings, Vol. 9,
+but I also know that there are many similar song titles in my discography, so I want to check if the result of the
+query is the exact match. Then I will know that my code works as intended. Probably I should also check if the result
+of the search in Apple Music API is a proper JSON object, but that I leave to you for an excercise instead of another
+round with kata from Codewars. They are good to train, but you probably won't write that kind of code never in your lifetime
+as a proffesional Hacker, you would just copy and paste the result of a pleasent conversation with _ChatGPT_, or 
+_Google_ search. To solve this puzzle, you can use `json-c` library that we have installed in Dockerfile. And yes,
+you can develop in container. If you want to jump right now into development in containers, you might check this
+article about [Visual Studio Code - devcontainers](https://code.visualstudio.com/docs/devcontainers/containers).
+
+I hope you're ready for another round of dissecting source code, this time in `C`.
+
+First we import every library and header file we will use in our test cases. Then we declare `setUp` and `tearDown`
+functions, so the Unity framework is happy. This time there is nothing in them, but you will put there pieces
+of code that must be run _before_ and _after_ every `RUN_TEST(test)` in main function. We can start from
+putting names of our test functions, and yes there might be the other way to do this, mainly splitting code into
+even smaller parts. That would greatly enhance the readability of a test runner output, but it has no difference
+on running tests itself other than if your code depends on external resources, for example database, or API calls -
+they will be repeated every time you invoke a test, so plan responsibly and accordingly to your Internet bandwith.
+
+#### curl_should_returnUserIp
+
+This function tests if the IP has proper format, if the message is not null, that it contains four crucial parts of
+IPv4 IP address and that in response there are only digits and dots. As a side note, if you modify user agent of
+curl invokation (you might do this in curl.c about which we will talk next), you can get HTML response which you
+can then embed on website we will create in some time (this should be another kata for you).
+
+How do we test? Thanks to Unity framework verbosity we know what types are used in test cases, and if one fails,
+the function immedietly returns so you can investigate on your own. But remember that you should, but are not
+constrained by anyone to fail 💄 the test first, and only then gradually improve. Since, we're in statically
+typed world yet, we can't just run the tests, because of missing dependencies, so I think it's fair enough.
+
+##### The tricks used.
+
+- strtok(string, character) - split the string on first occurance of the desired character
+- atoi(string) - tries to return int from string
+- digits[0] = part / 100; digits[1] = (part / 10) % 10; digits[2] = part % 10; - get one digit at the time and save
+to array
+- isdigit(number) - return true if a digit is an actual number (one at the time)
+
+#### curl_should_returnSetAndSettingsVol9
+
+This function is in part exception to reusability rule, as it checks for hard coded values, but I know what this
+values would be and I want to be sure that the returned response is exactly this nothing else.
+
+Here I check for title of a song, it's id and and artist name. Also some basic string and null tests. Nothing
+to worry about, just good to know. Like I mentioned, you should try to check if the output is valid JSON object,
+and maybe add some test if the response contains particular fieldnames, becuase you might want to check for
+other artist and accidently omit or add requested entities. Here is the link to [Apple Music API](https://performance-partners.apple.com/search-api).
+
+##### Tricks used
+
+- limit response to one song, and check for it's correctness
+
+### curl library itself
+
+Although there is already a tool named cURL, and it is very useful, here we use subset of it's inner engine libcurl
+to create our own `GET` request to external resources. You can try this at home.
+
+### RuboCop and ClangFormat, the police of the source code
 
 - [RuboCop](https://rubocop.org/) is a tool that beautifies your code written in Ruby. 
 - [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) is a tool that prettifies your C, C++, Java,

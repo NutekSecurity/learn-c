@@ -66,7 +66,7 @@ void curl_should_returnSetAndSettingsVol9(void) {
   TEST_ASSERT_NOT_NULL_MESSAGE(strchr(result, '\0'),
                                "result is not null-terminated");
   TEST_ASSERT_EQUAL_CHAR_MESSAGE('\n', result[strlen(result) - 1],
-                                 "result should end with a null terminator\n");
+                                 "result should end with a new line\n");
   // check if second last character is a new line
 
   TEST_ASSERT_EQUAL_CHAR_MESSAGE('\n', result[strlen(result) - 2],

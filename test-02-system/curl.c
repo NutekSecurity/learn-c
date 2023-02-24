@@ -27,6 +27,7 @@ static size_t write_data(void *data, size_t size, size_t nmemb, void *userp) {
 }
 
 char *curl(char *url) {
+    // initialize curl with ssl
   curl_global_init(CURL_GLOBAL_SSL);
   CURL *curl;
   CURLcode res;
@@ -34,17 +35,25 @@ char *curl(char *url) {
   struct memory chunk;
   chunk.response = malloc(1); /* will be grown as needed by the realloc above */
   chunk.size = 0;             /* no data at this point */
+  /* init the curl session */
   curl = curl_easy_init();
   if (curl) {
     struct curl_slist *headers = NULL;
+    // set the content type to json
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    /* specify URL to get */
     curl_easy_setopt(curl, CURLOPT_URL, url);
+    // set the ssl options
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    /* send all data to this function  */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    /* we pass our 'chunk' struct to the callback function */
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    /* get it! */
     res = curl_easy_perform(curl);
+    /* check for errors */
     if (res != CURLE_OK) {
       fprintf(stderr, "curl_easy_perform() failed: %s",
               curl_easy_strerror(res));
@@ -77,13 +86,22 @@ char *curl(char *url) {
       // because it works
       json_object *jobj = json_object_new_string(chunk.response);
       response = (char *)json_object_to_json_string(jobj);
+      /* cleanup curl stuff */
       curl_easy_cleanup(curl);
+      /* we are done with libcurl, so clean it up */
+      curl_global_cleanup();
       return response;
     }
     free(chunk.response);
+    /* cleanup curl stuff */
     curl_easy_cleanup(curl);
+    /* we are done with libcurl, so clean it up */
+    curl_global_cleanup();
     return response;
   }
+  /* cleanup curl stuff */
   curl_easy_cleanup(curl);
+  /* we are done with libcurl, so clean it up */
+  curl_global_cleanup();
   return chunk.response;
 }
