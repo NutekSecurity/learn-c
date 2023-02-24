@@ -1262,7 +1262,7 @@ WORKDIR /app
 RUN dnf groupinstall -y 'Development Tools'
 RUN dnf install -y ruby libcurl-devel json-c-devel && gem install bundler
 
-ENTRYPOINT [ "make test" ]
+ENTRYPOINT [ "make", "test" ]
 ```
 Be aware that I have added `libcurl` and `json-c` _*-devel_ libraries that we will use
 
@@ -1504,11 +1504,520 @@ other artist and accidently omit or add requested entities. Here is the link to 
 Although there is already a tool named cURL, and it is very useful, here we use subset of it's inner engine libcurl
 to create our own `GET` request to external resources. You can try this at home.
 
-### RuboCop and ClangFormat, the police of the source code
+```c
+#include <curl/curl.h>
+#include <json-c/json.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+struct memory {
+  char *response;
+  size_t size;
+};
+
+static size_t write_data(void *data, size_t size, size_t nmemb, void *userp) {
+  size_t realsize = size * nmemb;
+  struct memory *mem = (struct memory *)userp;
+
+  char *ptr = realloc(mem->response, mem->size + realsize + 1);
+  if (ptr == NULL)
+    return 0; /* out of memory! */
+
+  mem->response = ptr;
+  memcpy(&(mem->response[mem->size]), data, realsize);
+  mem->size += realsize;
+  mem->response[mem->size] = 0;
+
+  return realsize;
+}
+
+char *curl(char *url) {
+    // initialize curl with ssl
+  curl_global_init(CURL_GLOBAL_SSL);
+  CURL *curl;
+  CURLcode res;
+
+  struct memory chunk;
+  chunk.response = malloc(1); /* will be grown as needed by the realloc above */
+  chunk.size = 0;             /* no data at this point */
+  /* init the curl session */
+  curl = curl_easy_init();
+  if (curl) {
+    struct curl_slist *headers = NULL;
+    // set the content type to json
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    /* specify URL to get */
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    // set the ssl options
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    /* send all data to this function  */
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    /* we pass our 'chunk' struct to the callback function */
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    /* get it! */
+    res = curl_easy_perform(curl);
+    /* check for errors */
+    if (res != CURLE_OK) {
+      fprintf(stderr, "curl_easy_perform() failed: %s",
+              curl_easy_strerror(res));
+    }
+    char *response = malloc(chunk.size);
+    if (response == NULL) {
+      fprintf(stderr, "malloc() failed: %s", curl_easy_strerror(res));
+    }
+    // if first char is not '{' or '[' then it is not a json
+    // so we return the whole response
+    if (chunk.response[0] != '{' && chunk.response[0] != '[') {
+      // return not JSON object
+      curl_easy_cleanup(curl);
+      /* we are done with libcurl, so clean it up */
+      curl_global_cleanup();
+      return chunk.response;
+    } else {
+      // encode the response to json
+      // and return it
+      // this is to avoid the problem of the json-c library
+      // that can't parse the response if it is not a json
+      // but it is a json
+      // so we encode it to json and then decode it
+      // and then return it
+      // this is a workaround
+      // and it is not a good solution
+      // but it works
+      // and it is the only solution that i found
+      // so i will use it
+      // and i will not change it
+      // because it works
+      // and i don't want to change it
+      // because it works
+      json_object *jobj = json_object_new_string(chunk.response);
+      response = (char *)json_object_to_json_string(jobj);
+      /* cleanup curl stuff */
+      curl_easy_cleanup(curl);
+      /* we are done with libcurl, so clean it up */
+      curl_global_cleanup();
+      return response;
+    }
+    // empty, should never run
+    free(chunk.response);
+    /* cleanup curl stuff */
+    curl_easy_cleanup(curl);
+    /* we are done with libcurl, so clean it up */
+    curl_global_cleanup();
+    return response;
+  }
+  // error initializing curl, return defaults
+  /* cleanup curl stuff */
+  curl_easy_cleanup(curl);
+  /* we are done with libcurl, so clean it up */
+  curl_global_cleanup();
+  return chunk.response;
+}
+```
+
+Here we go! We have here a complete source code for example usage of libcurl library in so called wrapper around it
+, the function takes a single argument url, which is a pointer to a character array or C-style string. The function 
+itself returns a pointer to a character array or C-style string. It is based of an example from cURL library webpage
+with addition of SSL and JSON object check, cast and downcast. So now you should know how to solve the previous puzzle
+on how to check if a string is a valid JSON object. We set headers, to accept json response, but if the response is not
+JSON object, it's not the end of the world, our library wrapper will just return that response, so you might experiment
+here with many other use cases for cURL. The only puzzle that isn't solved is [user agent](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) which you can set to something more real, than nothing to get other results from `ifconfig.me`,
+and many other websites. In fact APIs are design to be user agent agnostic, so in most cases you will get the same result,
+but you can request a website to get different HTML when you use iOS, or Android user agent, or some legacy browser like
+Internet Explorer.
+
+The only mysterious part of curl function for you as far as you read and learn on your own may be CURLOPT_WRITEFUNCTION and
+CURLOPT_WRITEDATA where the write_data writes data as it comes to chunk so it can be returned as full response.
+
+### make test
+
+Right now you can run the Dockerfile. Still nothing? Don't worry... We have two options. We can share our "live" folder in
+the container, or better, copy the source code to container so we don't loose data accidently. I will show you both ways.
+
+```bash
+docker run --name dev -v /absolute/path/to/source/code:/app -it c-dev
+```
+
+To copy source code into container, we have to change the Dockerfile
+
+```Dockerfile
+FROM fedora:latest
+
+WORKDIR /app
+
+RUN dnf groupinstall -y 'Development Tools'
+RUN dnf install -y ruby libcurl-devel json-c-devel && gem install bundler
+
+RUN git clone https://github.com/ThrowTheSwitch/Unity.git
+COPY . /app
+RUN sed -i 's/..\/unity\//Unity\/src\//' test.c && sed -i 's/-I..\/unity/-IUnity\/src/' Makefile && \
+    sed -i 's/..\/unity\//Unity\/src\//' Makefile
+
+ENTRYPOINT [ "make", "test" ]
+```
+
+Now that you have proper Dockerfile, place yourself in curl.c, and test.c source code directory and then you can rebuild it:
+
+```bash
+docker build --tag c-dev .
+```
+
+After this little treatment to Dockerfile and rebuild of image, you can run container:
+
+```bash
+docker run --rm -it c-dev`
+```
+
+Here you go 🍀! Now we're in green state.
+
+## RuboCop and ClangFormat, the police of the source code
 
 - [RuboCop](https://rubocop.org/) is a tool that beautifies your code written in Ruby. 
 - [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) is a tool that prettifies your C, C++, Java,
 Java Script, JSON, Objective-C, Protobuf and C# code.
+
+Use this tools to make your code more align with the industry standards. Make it clean and shiny.
+
+## Ruby and Sinatra
+
+You have the data, now what? Let's display it on the website.
+
+## Stack and heap
+
+In computer programming, the terms "stack" and "heap" refer to two different areas of memory that are used to store data 
+during the execution of a program.
+
+The stack is a region of memory that is used to store function calls and local variables. Each time a function is called, 
+a new frame is created on the stack, which contains the function's arguments, local variables, and return address. When the
+function returns, its frame is removed from the stack, and the program resumes execution at the return address that was 
+stored in the calling function's frame. The stack is a LIFO (last-in, first-out) data structure, meaning that the most 
+recently added item is the first one to be removed.
+
+The heap, on the other hand, is a region of memory that is used for dynamic memory allocation. When a program needs to 
+allocate memory at runtime, it requests a block of memory from the heap using functions like malloc() or new(). The memory 
+block that is allocated can be of any size and can be accessed randomly. Unlike the stack, the heap is not automatically 
+managed by the program's execution flow, so it's up to the programmer to manage the memory allocations and deallocations 
+properly to prevent memory leaks or other issues.
+
+In summary, the stack is a fixed-size region of memory that is used for function calls and local variables, while the heap 
+is a dynamic region of memory that is used for dynamic memory allocation.
+
+Stack example:
+
+```c
+#include <stdio.h>
+
+int factorial(int n) {
+    if (n == 0) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int num = 5;  // local variable stored on the stack
+    int result = factorial(num);  // function call creates a new frame on the stack
+    printf("Factorial of %d is %d\n", num, result);
+    return 0;
+}
+```
+
+In this example, we define a function factorial that calculates the factorial of a given number recursively. When we call 
+this function from main, a new frame is created on the stack to store the function arguments and local variables. When the 
+function returns, its frame is removed from the stack, and the program resumes execution from where it left off.
+
+Heap example:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *p;  // pointer variable to store the address of the memory block
+    int n = 5;  // number of integers to allocate
+
+    // allocate memory block on the heap using malloc()
+    p = (int*) malloc(n * sizeof(int));
+    if (p == NULL) {
+        printf("Failed to allocate memory on the heap\n");
+        return 1;
+    }
+
+    // initialize the memory block with some values
+    for (int i = 0; i < n; i++) {
+        *(p + i) = i * i;
+    }
+
+    // print the values stored in the memory block
+    for (int i = 0; i < n; i++) {
+        printf("%d ", *(p + i));
+    }
+
+    // free the memory block when we're done using it
+    free(p);
+
+    return 0;
+}
+```
+
+In this example, we use the malloc function to allocate a block of memory on the heap that can hold n integers. 
+We then initialize the memory block with some values and print them out. Finally, we use the free function to 
+release the memory block back to the operating system. It's important to note that we must always free the memory 
+block when we're done using it to prevent memory leaks.
+
+### Stack overflow
+
+Stack overflow occurs when the amount of memory allocated for the stack is exceeded. This can happen when a program 
+has too many nested function calls or when a function allocates too much memory on the stack for local variables.
+
+Here are some ways to prevent stack overflow in C language:
+
+1. Reduce the number of nested function calls: One way to prevent stack overflow is to reduce the number of nested 
+function calls in your program. This can be achieved by breaking down larger functions into smaller ones, or by using 
+loops instead of recursion.
+
+2.Limit the size of local variables: If you're allocating large arrays or structures on the stack, you may run out of 
+space quickly. To prevent this, you can allocate these variables on the heap instead using functions like malloc or calloc.
+
+3. Increase the stack size: Some compilers allow you to increase the amount of memory allocated for the stack. In GCC, 
+for example, you can use the -Wl,--stack,SIZE linker option to set the stack size to SIZE bytes.
+
+4. Use tail recursion: If you're using recursion, you can use tail recursion to reduce the amount of memory used on the 
+stack. Tail recursion is a technique where the recursive call is the last statement in the function, so the compiler 
+can optimize it into a loop.
+
+5. Avoid infinite recursion: Infinite recursion occurs when a function calls itself recursively without a base case. 
+This can quickly exhaust the stack space and cause a stack overflow. To prevent this, make sure your recursive functions 
+have a base case that terminates the recursion.
+
+By following these tips, you can prevent stack overflow and ensure that your program runs smoothly.
+
+### C language caveats of stack and heap
+
+In C language, the main difference between the stack and the heap is how memory is allocated and managed.
+
+1. Memory allocation: The stack is a static memory allocation method where the memory is allocated at compile-time. 
+On the other hand, the heap is a dynamic memory allocation method where the memory is allocated at run-time.
+
+2. Memory management: The stack is managed automatically by the system, and memory is allocated and deallocated 
+in a last-in, first-out (LIFO) manner. This means that memory is automatically deallocated when a function returns 
+or a variable goes out of scope. In contrast, memory on the heap is allocated and deallocated manually by the programmer,
+using functions like malloc, calloc, realloc, and free.
+
+3. Memory size: The stack is typically smaller than the heap. The size of the stack is determined at compile-time and is 
+limited by the amount of available memory. The size of the heap, on the other hand, can grow or shrink dynamically at 
+run-time as needed.
+
+4. Data access: Accessing data on the stack is faster than accessing data on the heap because the stack uses a LIFO 
+memory allocation method, and data is stored in contiguous blocks. In contrast, accessing data on the heap requires 
+the use of pointers, which can be slower.
+
+In summary, the stack and the heap are two different memory allocation methods in C language. The stack is a static 
+memory allocation method managed automatically by the system, while the heap is a dynamic memory allocation method 
+managed manually by the programmer. The size of the stack is limited and determined at compile-time, while the size 
+of the heap can grow or shrink dynamically at run-time. Accessing data on the stack is faster than accessing data on the heap.
+
+### Segmentation fault
+
+A segmentation fault (often referred to as a "segfault") is a type of error that occurs when a program tries to access
+memory that it is not allowed to access. In C, this often happens when a program tries to access memory that has not been 
+allocated or has already been freed. Here are a few examples of code that can cause a segmentation fault:
+
+1. Accessing an array out of bounds:
+
+```c
+int arr[5];
+arr[6] = 42; // Accessing the 7th element of the array (which doesn't exist)
+```
+
+In this example, the program tries to access the 7th element of the arr array, which is outside the bounds of the array 
+(since the array only has 5 elements). This can cause a segmentation fault because the program is trying to access memory 
+that has not been allocated for the array.
+
+2. Dereferencing a null pointer:
+
+```c
+int* ptr = NULL;
+*ptr = 42; // Dereferencing a null pointer
+```
+
+In this example, the program creates a null pointer ptr, and then tries to dereference it (i.e., access the memory it points to)
+and store a value in it. This can cause a segmentation fault because the program is trying to access memory that has not been 
+allocated for the pointer.
+
+```c
+
+3. Double-freeing memory:
+
+```c
+int* ptr = malloc(sizeof(int));
+free(ptr);
+free(ptr); // Freeing the same memory twice
+```
+
+In this example, the program allocates memory for an integer using malloc, and then frees it using free. However, 
+the program then tries to free the same memory again, which can cause a segmentation fault because the memory has 
+already been freed.
+
+These are just a few examples of situations that can cause a segmentation fault in C. In general, segmentation faults 
+occur when a program tries to access memory that it is not allowed to access, so it's important to be careful when 
+working with pointers and memory allocation in C.
+
+Here's an example of how returning from a function can cause a segmentation fault in C:
+
+```c
+int* create_array(int size) {
+    int arr[size];
+    for (int i = 0; i < size; i++) {
+        arr[i] = i;
+    }
+    return arr;
+}
+
+int main() {
+    int* ptr = create_array(5);
+    return 0;
+}
+```
+
+In this example, the create_array function creates an integer array arr of size size, initializes it with values, 
+and then returns a pointer to the array. However, the array arr is allocated on the stack within the function, 
+which means that it is deallocated when the function returns.
+
+When the main function calls create_array and assigns the returned pointer to ptr, ptr points to memory that has 
+already been deallocated, and accessing this memory can cause a segmentation fault.
+
+To avoid this error, we could allocate the memory for the array on the heap using malloc, which would ensure that 
+the memory remains valid after the function returns:
+
+```c
+int* create_array(int size) {
+    int* arr = malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) {
+        arr[i] = i;
+    }
+    return arr;
+}
+
+int main() {
+    int* ptr = create_array(5);
+    free(ptr); // Don't forget to free the memory when you're done with it
+    return 0;
+}
+```
+
+In this version of the code, the create_array function allocates memory on the heap using malloc, initializes it 
+with values, and returns a pointer to the allocated memory. The main function can safely access the memory pointed 
+to by ptr because it was allocated on the heap using malloc and will remain valid even after the function returns.
+
+## Pointers to functions
+
+In C, it is possible to declare pointers to functions, which are similar to pointers to data. A pointer to a 
+function stores the memory address of a function, allowing you to call the function indirectly through the pointer. 
+This can be useful in many situations, such as when you want to pass a function as an argument to another function, 
+or when you want to choose which function to call at runtime based on some condition.
+
+Here's an example of how to declare and use a pointer to a function in C:
+
+```c
+#include <stdio.h>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int subtract(int a, int b) {
+    return a - b;
+}
+
+int main() {
+    int (*p)(int, int); // Declare a pointer to a function that takes two integers as arguments and returns an integer
+    p = add; // Set the pointer to point to the 'add' function
+    printf("%d\n", p(2, 3)); // Call the function indirectly through the pointer
+    p = subtract; // Set the pointer to point to the 'subtract' function
+    printf("%d\n", p(5, 3)); // Call the function indirectly through the pointer
+    return 0;
+}
+```
+
+In this example, we declare a pointer p to a function that takes two integers as arguments and returns an integer. 
+We then set the pointer to point to the add function using the assignment p = add, and call the function indirectly 
+through the pointer using p(2, 3). We then set the pointer to point to the subtract function using p = subtract, 
+and call the function indirectly through the pointer using p(5, 3).
+
+Note that the syntax for declaring a pointer to a function includes parentheses around the pointer name and the argument 
+types, as well as an asterisk to indicate that it is a pointer. In the example above, we declare the pointer as 
+int (*p)(int, int) to indicate that it is a pointer to a function that takes two int arguments and returns an int.
+
+Use `typedef before pointer function declaration. Then you can pass it as a parameter to function (callback), use
+it in one function definition and then when invoking function pass other functions respecting the type of callback.
+
+## Bad practice in C
+
+There are many bad practices in C code that can lead to bugs, security vulnerabilities, or poor performance. 
+Here are some examples:
+
+1. Not checking return values: C functions often return error codes or null pointers to indicate errors or failure.
+Failing to check these return values can lead to undefined behavior or other problems in your program.
+
+2.Using uninitialized variables: Using uninitialized variables can lead to unpredictable behavior, as the value of an
+uninitialized variable is undefined.
+
+3.Ignoring compiler warnings: Compiler warnings indicate potential problems in your code that you should fix. Ignoring 
+these warnings can lead to bugs or other issues in your program.
+
+4. Using magic numbers: Magic numbers are hard-coded constants that appear in your code without explanation. Using magic
+numbers can make your code harder to understand and maintain.
+
+5.Not freeing dynamically allocated memory: If you allocate memory dynamically using functions like malloc or calloc, you
+should free it when you're done with it using the free function. Failing to do so can lead to memory leaks and poor performance.
+
+6.Using unsafe functions: Some C functions are considered unsafe because they can cause buffer overflows or other security
+vulnerabilities if used improperly. Examples include gets, strcpy, and scanf.
+
+7.Not handling errors properly: When your program encounters an error, it's important to handle it properly to avoid
+undefined behavior or other problems. This might involve logging an error message, returning an error code, or taking
+some other appropriate action.
+
+These are just a few examples of bad practices in C code. To write high-quality, robust C code, it's important to follow
+best practices and avoid common pitfalls.
+
+### Best practice in C
+
+Here are some best practices for writing C code:
+
+- Use descriptive variable names: Choosing descriptive names for your variables can make your code easier to 
+understand and maintain.
+
+- Use comments to explain your code: Adding comments to your code can help others understand what your code does 
+and why.
+
+- Always initialize your variables: Initializing your variables to a known value can help avoid bugs and undefined behavior.
+
+- Check return values and handle errors: C functions often return error codes or null pointers to indicate errors or 
+failure. Always check these return values and handle errors appropriately.
+
+- Use const and static where appropriate: Using the const keyword can help prevent accidental modifications to your 
+variables, while using the static keyword can limit the scope of your variables and functions.
+
+- Use braces around conditional statements: Adding braces around your conditional statements can help prevent bugs and
+improve readability.
+
+- Avoid using global variables: Global variables can make your code harder to understand and maintain. Instead, consider
+passing values as function arguments or using local variables.
+
+- Use preprocessor macros sparingly: Preprocessor macros can be useful for defining constants or avoiding code duplication,
+but they can also make your code harder to read and maintain.
+
+- Follow a consistent coding style: Using a consistent coding style can make your code easier to read and understand. 
+Consider using a popular coding style guide, such as the Google C++ Style Guide or the GNU Coding Standards.
+
+- Test your code thoroughly: Testing your code can help catch bugs and ensure that your code works as expected. Consider
+using automated testing tools, such as unit tests or integration tests, to help catch problems early.
 
 ## Continuosly update Ruby program with output from C program
 

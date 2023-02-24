@@ -65,7 +65,10 @@ char *curl(char *url) {
     // if first char is not '{' or '[' then it is not a json
     // so we return the whole response
     if (chunk.response[0] != '{' && chunk.response[0] != '[') {
+      // return not JSON object
       curl_easy_cleanup(curl);
+      /* we are done with libcurl, so clean it up */
+      curl_global_cleanup();
       return chunk.response;
     } else {
       // encode the response to json
@@ -92,6 +95,7 @@ char *curl(char *url) {
       curl_global_cleanup();
       return response;
     }
+    // empty, should never run
     free(chunk.response);
     /* cleanup curl stuff */
     curl_easy_cleanup(curl);
@@ -99,9 +103,11 @@ char *curl(char *url) {
     curl_global_cleanup();
     return response;
   }
+  // error initializing curl, return defaults
   /* cleanup curl stuff */
   curl_easy_cleanup(curl);
   /* we are done with libcurl, so clean it up */
   curl_global_cleanup();
   return chunk.response;
 }
+
