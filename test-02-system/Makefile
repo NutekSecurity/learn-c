@@ -34,4 +34,3 @@ clean:
 	rm -f $(DEBUG)
 	rm -f $(CURL)
 
-

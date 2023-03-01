@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
-gem 'sinatra', :github => 'sinatra/sinatra'
+gem 'ffi'
 gem 'puma'
 gem 'rack'
-gem 'ffi'
+gem 'sinatra', github: 'sinatra/sinatra'
 
 # other dependencies
 gem 'erb'
@@ -12,5 +14,5 @@ group :test do
 end
 
 group :development, :test do
-  gem "rerun"
+  gem 'rerun'
 end

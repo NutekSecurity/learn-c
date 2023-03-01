@@ -4,6 +4,8 @@
 
 Szymon Bronisław Błaszczyński © 2023 museyoucoulduse@gmail.com
 
+For those seeking peace at time of war, and those at war in time of peace.
+
 ___
 
 
@@ -22,7 +24,7 @@ Overall program1 will print 7 times this sentence in different color:
 Cześć Nutek, mówi Szymon!
 ```
 
-[![asciicast](https://asciinema.org/a/562498.svg)](https://asciinema.org/a/562498?autoplay=1&speed=2&theme=solarized-dark)
+[![asciicast](https://asciinema.org/a/563448.svg)](https://asciinema.org/a/563448?autoplay=1&speed=2&theme=solarized-dark)
 
 ### Why?
 
@@ -1686,6 +1688,646 @@ Use this tools to make your code more align with the industry standards. Make it
 
 You have the data, now what? Let's display it on the website.
 
+Create a `Gemfile` with this content:
+
+```ruby
+source 'https://rubygems.org'
+gem 'sinatra', :github => 'sinatra/sinatra'
+gem 'puma'
+gem 'rack'
+gem 'ffi'
+
+# other dependencies
+gem 'erb'
+group :test do
+  gem 'rack-test'
+  gem 'rspec'
+end
+
+group :development, :test do
+  gem "rerun"
+end
+```
+
+We define here what will be installed when we run `bundle install` command. Let's change the Dockerfile too and
+give it `/bin/bash` as the `ENTRYPOINT`, this will let us fiddle with the system while being able to run make and
+in near future `bundle exec` commands. Do you know that you can connect to already running container? No? Well now you do.
+It's just a matter of `docker exec` command. I think, that the best workflow from now until we have ready web app would be
+to attach live folder into container. Comment out the `#RUN git clone`, `#COPY . /app`, subsequent `#RUN` and a line below 
+`# ` and rebuild the container - `docker build -t c-dev .` After this you can attach current folder and run the container
+with command like this (mind that we're publishing port 9292 from container to port 9292 on the host machine, what is
+reflected in the command in the opposite order):
+
+```bash
+docker run --rm -it -v $(pwd):/app -p 9292:9292 c-dev
+```
+
+You might run into issues with permissions to read and write to folder, so dig into the settings of Docker Desktop app,
+there is an option that enables sharing chosen directories.
+
+On windows you might need to change `$(pwd)` to `${pwd}`.
+
+After the initial run you might look around the system if you wish, but let's head now over to [RubyGems](https://rubygems.org)
+where modules, called `gems` are shared between users. We will take a look at each of the entry in `Gemfile`.
+
+Meanwhile, first thing we do is add `spec/examples.txt` to `.gitgnore`. I hope you're already using `git`, and .`gitignore`
+simply tells `git` which files to ignore from source control.
+
+Open [RubyGems](https://rubygems.org) in your web browser and take a look around. You already heard about `RuboCop`, try to
+search for something that is in the interest for you. I will just itreate over `Gemfile` now.
+
+### Gemfile
+
+In the order of appearence:
+
+- [Sinatra](https://sinatrarb.com/) - Sinatra is a DSL for quickly creating web applications in Ruby with minimal effort. If you
+search for Sinatra on RubyGems you might notice, that there is plenty of gems that help Sinatra to be Sinatra. We will explore
+this multitude of choices.
+- [Puma](https://puma.io/) - Puma is a simple, fast, threaded, and highly parallel HTTP 1.1 server for Ruby/Rack applications. 
+Puma is intended for use in both development and production environments. It's great for highly parallel Ruby implementations 
+such as Rubinius and JRuby as well as as providing process worker support to support CRuby well.
+- [Rack](https://github.com/rack/rack) - Rack provides a minimal, modular and adaptable interface for developing web applications
+in Ruby. By wrapping HTTP requests and responses in the simplest way possible, it unifies and distills the API for web servers,
+web frameworks, and software in between (the so-called middleware) into a single method call.
+- [FFI](https://github.com/ffi/ffi/wiki) - Ruby FFI library. FFI stands for Foreign Function Interface.
+- [erb](https://github.com/ruby/erb) - An easy to use but powerful templating system for Ruby.
+- [rack-test](https://github.com/rack/rack-test) - Rack::Test is a small, simple testing API for Rack apps. It can be used
+on its own or as a reusable starting point for Web frameworks and testing libraries to build on.
+- [rspec](https://github.com/rspec) - BDD for Ruby
+- [rerun](https://github.com/alexch/rerun/) - Restarts your app when a file changes. A no-frills, command-line alternative 
+to Guard, Shotgun, Autotest, etc.
+
+This are the dependencies for my web frontend to, let's be true, simple data. Maybe that's an overkill, but you will
+learn a lot. Me too 🚀...
+
+Now that we've talked about what is in there, run your image without `--rm` option and with `--name app` like so:
+
+```bash
+docker run -it --name app -v $(pwd):/app -p 9292 c-dev
+```
+
+This would tremendously make things simpler, you can now preserve state of container, because it's not removed after stopping,
+and a name is a convenience label to access it.
+
+### Bundle install
+
+First of all, we need to add `ruby-devel` to list of installed packages on Fedora, so the Dockerfile should now look like this:
+
+```Dockerfile
+FROM fedora:latest
+
+WORKDIR /app
+
+RUN dnf groupinstall -y 'Development Tools'
+RUN dnf install -y ruby ruby-devel libcurl-devel json-c-devel && gem install bundler
+
+#RUN git clone https://github.com/ThrowTheSwitch/Unity.git
+#COPY . /app
+#RUN sed -i 's/..\/unity\//Unity\/src\//' test.c && sed -i 's/-I..\/unity/-IUnity\/src/' Makefile && \
+#    sed -i 's/..\/unity\//Unity\/src\//' Makefile
+ENTRYPOINT [ "/bin/bash" ]
+```
+
+Please start the container with `docker run -it --name app -v $(pwd):/app -p 9292 c-dev` command, and run `bundle install`
+inside it. You will see how gems are consecutively installed, wait until command ends. After adding new gem to Gemfile 
+you would have to run `bundle install` again, but for now we're done here.
+
+### Configuration
+
+Do you want to have a website? Maybe you want to see how I code a website? So we're going on with this example app that will
+show us the results of our `curl()` function invocations in `Ruby` and `Sinatra`. Create two files, one `config.ru` and second
+`config/environment.rb`.
+
+#### config.ru
+
+Place this inside:
+
+```ruby
+# frozen_string_literal: true
+
+require './config/environment'
+run Rack::URLMap.new('/' => Server)
+```
+
+and...
+
+#### config/environment.rb
+
+In this file:
+
+```
+# frozen_string_literal: true
+
+require 'rubygems'
+require 'bundler'
+Bundler.require(:default)
+Bundler.require(Sinatra::Application.environment)
+
+require './app/server'
+require './app/server'
+```
+
+In summary this files enables `rackup` support for `Sinatra` app, that will run in container. It's just setup files...
+If you want to be more picky, dig up the documentation on Rack and it's support for Sinatra, but for now, I leave it
+here as is. I hoope you will handle me and read this book as we go along, so we can create more sophisticated user interfaces
+and more complicated libraries for, especially, my use case **api hacking**. I want to do this in future, but for now,
+I have to refresh and broaden my basics knowledge, and writing this book helps me in the learning process and it should do
+good job at giving you a primer on programming and development process.
+
+
+### Rspec
+
+If you bare stick with me, come on and initialize your rspec testing environment with this command:
+
+```bash
+bundle exec rspec --init
+```
+
+Now make your `spec/spec_helper.rb` look like this (it's basically the same, with addition of top lines):
+
+```ruby
+# frozen_string_literal: true
+
+ENV['RACK_ENV'] = 'test'
+require './config/environment'
+# This file was generated by the `rspec --init` command. Conventionally, all
+# specs live under a `spec` directory, which RSpec adds to the `$LOAD_PATH`.
+# The generated `.rspec` file contains `--require spec_helper` which will cause
+# this file to always be loaded, without a need to explicitly require it in any
+# files.
+#
+# Given that it is always loaded, you are encouraged to keep this file as
+# light-weight as possible. Requiring heavyweight dependencies from this file
+# will add to the boot time of your test suite on EVERY test run, even for an
+# individual file that may not need all of that loaded. Instead, consider making
+# a separate helper file that requires the additional dependencies and performs
+# the additional setup, and require it from the spec files that actually need
+# it.
+#
+# See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+  # rspec-expectations config goes here. You can use an alternate
+  # assertion/expectation library such as wrong or the stdlib/minitest
+  # assertions if you prefer.
+  config.expect_with :rspec do |expectations|
+    # This option will default to `true` in RSpec 4. It makes the `description`
+    # and `failure_message` of custom matchers include text for helper methods
+    # defined using `chain`, e.g.:
+    #     be_bigger_than(2).and_smaller_than(4).description
+    #     # => "be bigger than 2 and smaller than 4"
+    # ...rather than:
+    #     # => "be bigger than 2"
+    expectations.include_chain_clauses_in_custom_matcher_descriptions = true
+  end
+
+  # rspec-mocks config goes here. You can use an alternate test double
+  # library (such as bogus or mocha) by changing the `mock_with` option here.
+  config.mock_with :rspec do |mocks|
+    # Prevents you from mocking or stubbing a method that does not exist on
+    # a real object. This is generally recommended, and will default to
+    # `true` in RSpec 4.
+    mocks.verify_partial_doubles = true
+  end
+
+  # This option will default to `:apply_to_host_groups` in RSpec 4 (and will
+  # have no way to turn it off -- the option exists only for backwards
+  # compatibility in RSpec 3). It causes shared context metadata to be
+  # inherited by the metadata hash of host groups and examples, rather than
+  # triggering implicit auto-inclusion in groups with matching metadata.
+  config.shared_context_metadata_behavior = :apply_to_host_groups
+
+  # The settings below are suggested to provide a good initial experience
+  # with RSpec, but feel free to customize to your heart's content.
+
+  # This allows you to limit a spec run to individual examples or groups
+  # you care about by tagging them with `:focus` metadata. When nothing
+  # is tagged with `:focus`, all examples get run. RSpec also provides
+  # aliases for `it`, `describe`, and `context` that include `:focus`
+  # metadata: `fit`, `fdescribe` and `fcontext`, respectively.
+  config.filter_run_when_matching :focus
+
+  # Allows RSpec to persist some state between runs in order to support
+  # the `--only-failures` and `--next-failure` CLI options. We recommend
+  # you configure your source control system to ignore this file.
+  config.example_status_persistence_file_path = 'spec/examples.txt'
+
+  # Limits the available syntax to the non-monkey patched syntax that is
+  # recommended. For more details, see:
+  # https://relishapp.com/rspec/rspec-core/docs/configuration/zero-monkey-patching-mode
+  config.disable_monkey_patching!
+
+  # This setting enables warnings. It's recommended, but in some cases may
+  # be too noisy due to issues in dependencies.
+  config.warnings = true
+
+  # Many RSpec users commonly either run the entire suite or an individual
+  # file, and it's useful to allow more verbose output when running an
+  # individual spec file.
+  if config.files_to_run.one?
+    # Use the documentation formatter for detailed output,
+    # unless a formatter has already been configured
+    # (e.g. via a command-line flag).
+    config.default_formatter = 'doc'
+  end
+
+  # Print the 10 slowest examples and example groups at the
+  # end of the spec run, to help surface which specs are running
+  # particularly slow.
+  config.profile_examples = 10
+
+  # Run specs in random order to surface order dependencies. If you find an
+  # order dependency and want to debug it, you can fix the order by providing
+  # the seed, which is printed after each run.
+  #     --seed 1234
+  config.order = :random
+
+  # Seed global randomization in this process using the `--seed` CLI option.
+  # Setting this allows you to use `--seed` to deterministically reproduce
+  # test failures related to randomization by passing the same `--seed` value
+  # as the one that triggered the failure.
+  Kernel.srand config.seed
+end
+```
+
+Here, we set the environment for testing purposes with `ENV['RACK_ENV']` and then we import the config file so it's
+available to the testing framework. Of course you can write your tests now. Make yourself an `spec/app` folder and inside
+it create a ruby file with, for example, `server_spec.rb` name. Fill it with this content, or read throught the code, and
+think how you could write your tests. But for now I recommend sticking to my trial and error effort.
+
+```ruby
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe Server do
+  def app
+    Server
+  end
+  describe 'GET /' do
+    it 'works' do
+      get '/'
+      expect(last_response).to be_ok
+    end
+  end
+
+  describe 'ifconfig.me' do
+    it 'returns ip address' do
+      get '/'
+      body = last_response.body
+      # search for patter in body
+      # that looks like an IP address
+      # e.g.
+      expect(body).to match(/(\d{1,3}\.){3}\d{1,3}/)
+    end
+  end
+
+  describe 'Apple Music API' do
+    it 'contains artist name' do
+      get '/'
+      body = last_response.body
+      expect(body).to match(/Neosb/)
+    end
+
+    it 'contains song name' do
+      get '/'
+      body = last_response.body
+      expect(body).to match(/Set and Settings, Vol. 9/)
+    end
+
+    it 'contains song artwork' do
+      get '/'
+      body = last_response.body
+      expect(body).to match(/artworkUrl100/)
+    end
+
+    it 'contains song preview' do
+      get '/'
+      body = last_response.body
+      expect(body).to match(/previewUrl/)
+    end
+
+    it 'contains song id' do
+      get '/'
+      body = last_response.body
+      expect(body).to match(/1658237994/)
+    end
+  end
+end
+```
+
+This are just simple tests, and they shouldn't really be here because we already tested the `curl` library, thus we
+shouldn't repeat ourselfs, but instead test our implementation that extend apps, not apps already written (library, or libraries
+in fact). I put this here for learning purposes, and learning by doing and sometimes repeating and doing things twice, 
+and the hard way. I wanted to show you that writing tests in `Ruby` can be really expressive and simple task. I think, that you
+already see that coding does not have to be done the hard way, it's just learning that you have to do before (that's why we
+learn C) is sometimes hard to grasp.
+
+In Ruby we will be writing web application that will run in container on our machine, but you can simply install all the 
+dependencies using bundler and with only `ruby` and maybe `ruby-devel` package you can run the whole app. For now we will stick
+to Dockerfile, which is easier to manage - at least for me.
+
+### Erb template
+
+Hej! Let's create a folder named `app/views`. There will live templates (one), for this example. It will be reading from
+server data, that will be passed into the view. The concept should be relatively simple. In the server part, you handle
+all the data mangling, calling, adding, formatting and so one, and then you will send this data as a hash (something
+similar to dictionary) to the template, that will display data to the end user (your best friend, maybe).
+
+First I will show you a wrapper, a partial, a template that is served to the user and is used to yield the actual erb index
+inside it. Save this as `layout.erb`.
+
+```erb
+<doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <%# Include the style.css %>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="main">
+  <%= yield %>
+</body>
+```
+
+Here we use simple `HTML`, Hypertext Markup Language that is the base language of the web. It is telling the browser what to
+display and where. CSS that is loaded using `<link rel...` is the syling language of the web. It tells the browser how to display
+content on the webpage. There is also Java Script that is the scripting language of the web, but we don't use it here - you might
+try to write in your web browser console, `console.log("Something meaningful, like the essence of life.")`.
+
+The `yield` and the `<%= %>` syntax is `Ruby` and `erb` respectively, and it's telling the template engine to include the result
+of parsing view in between `<body>`.
+
+Then we should create `style.css`. I include mine, but you might as well change some values and play around a bit with it (after
+we finish the [Sinatra app](#sinatra-app)).
+
+```css
+.main {
+    background-color: #f2f2f2;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.5;
+}
+```
+
+And now we finish this section with `index.erb`:
+
+```erb
+<h1>C library call from Ruby</h1>
+<h2>Pre-requisites</h2>
+<p>
+  How to compile a C library and call it from Ruby using FFI.
+  <pre>
+    <code>
+      // curl.c
+      
+      #include  &lt;curl/curl.h&gt;
+      ...
+      // compile with:
+      gcc -o curl -shared curl.c -lcurl
+      // or
+      gcc -o curl -shared curl.c -lcurl -fPIC
+      
+      # then in Ruby:
+      require 'ffi'
+      # Define the FFI interface to the curl() function in the shared library
+      module CurlLib
+        extend FFI::Library
+        ffi_lib './curl'
+        attach_function :curl, [:string], :string # [] is for arguments, :string is for return type
+      end
+      # to call the curl() function, use CurlLib.curl()
+      my_ip = CurlLib.curl('https://ifconfig.me')
+      puts "My IP is #{my_ip}"
+    </code>
+  </pre>
+  <h2>ifconfig.me</h2>
+  <p>
+    call - <strong>CurlLib.curl('https://ifconfig.me')</strong><br /><br />
+    Result:<br />
+    My IP is <%= curl %>
+  </p>
+  <h2>Apple Music API</h2>
+  <p>
+    call - <strong>CurlLib.curl('https://itunes.apple.com/lookup?id=1658237994')</strong><br /><br />
+    Example of calling a C library from Ruby using FFI.
+    Data returned by this website is in Java Script
+    Object Notation, JSON in short.<br />
+    <br />
+    JSON stands for JavaScript Object Notation, and it is a 
+    lightweight data interchange format. JSON is used to 
+    transmit data between a server and a web application as an alternative to XML.
+    <br />
+    <br />
+    JSON is easy for humans to read and write and is easy for 
+    machines to parse and generate. It is based on a subset 
+    of the JavaScript programming language, so it can be parsed 
+    by any modern programming language.
+    <br />
+    <br />
+    A JSON object is a collection of key/value pairs, where the 
+    keys are strings and the values can be any valid JSON data type, 
+    including strings, numbers, booleans, arrays, and other JSON objects.
+    <br />
+    <br />
+    Here is an example of a JSON object:
+
+    <pre>
+      <code>
+{
+  "name": "John Smith",
+  "age": 35,
+  "email": "john.smith@example.com",
+  "is_active": true,
+  "friends": ["Jane Doe", "Bob Johnson"]
+}
+      </code>
+    </pre>
+    In this example, "name", "age", "email", and "is_active" are keys, 
+    and "John Smith", 35, "john.smith@example.com", and true are their 
+    corresponding values. The "friends" key has an array of two strings as its value.
+    <br />
+    <br />
+    This is data extracted from Apple Music API:<br /><br />
+    <ul>
+      <li>Artist: <%= song_artist %></li>
+      <li>Song name: <%= song_name %></li>
+      <li>Song URL: <a href="<%= song_url %>" target="_blank">take me to the song</a></li>
+      <li>Artwork: <img src=<%= song_artwork %> /></li>
+      <li>
+        Preview:
+          <audio controls>
+            <source src=<%= song_preview %>>
+            Your browser does not support the audio element.
+          </audio>
+      </li>
+    </ul>
+    <br />
+          <br />
+    raw JSON:<br />
+    <pre>
+      <code>
+<%= song_json %>  
+      </code>
+    </pre>
+  </p>
+```
+
+### FFI
+
+Now we have to talk a little bit about another gem. FFI. It's used in here to call C code we wrote earlier in curl.c.
+We simply create a module and extend it with a library `curl`, and assign it a function, also named curl with one
+string parameter and a string return type. This code essnetially enables us to use any C library we want (Rust too),
+if we know how to call this function.
+
+```ruby
+require 'ffi'
+
+# Define the FFI interface to the curl() function in the shared library
+module CurlLib
+  extend FFI::Library
+  ffi_lib './curl'
+  attach_function :curl, [:string], :string # [] is for arguments, :string is for return type
+end
+```
+
+### Sinatra app
+
+This is the final step after which you can run `rspec spec` to test the code, and `bundle exec rerurn -- bundle exec rackup config.ru`
+to run the development server with rebuild after each change to the code you make (unfortunately not for only `curl`). Here
+we do not follow the standard, and easiest way to make `Sinatra` app, we inherit a class from `Sinatra::Base` what gives us the
+ability to test like we do. Then we only set the main handle, the `get '/'` and inside this block we call FFI module CurlLib
+with curl method and string argument twice. Once for `ifconfig.me` and once for `Apple Music API`. We save them to local variables,
+mangle them a bit (to get JSON and remove %), then save relevant parts to instance variables and return from `get '/'`  with 'erb'
+call with `:index`, `locals: { ... }` and `layout:` parameters. Here is the source code:
+
+```ruby
+# frozen_string_literal: true
+
+require 'sinatra/base'
+require 'ffi'
+require 'json'
+
+# Define the FFI interface to the curl() function in the shared library
+module CurlLib
+  extend FFI::Library
+  ffi_lib './curl'
+  attach_function :curl, [:string], :string # [] is for arguments, :string is for return type
+end
+
+# invoke curl() function from curl.so
+# send the result to the view
+class Server < Sinatra::Base
+  get '/' do
+    # pass @curl to the view
+    myip = CurlLib.curl 'ifconfig.me'
+    @myip = myip.chop # remove trailing '%' from ifconfig.me response
+    @title = 'Learn C'
+    song = CurlLib.curl 'https://itunes.apple.com/lookup?id=1658237994'
+    song = song.strip
+    @song_pretty = JSON.pretty_generate(JSON.parse(song))
+    song = JSON.parse(song)
+    @song_preview = song['results'][0]['previewUrl']
+    @song_name = song['results'][0]['trackName']
+    @song_artist = song['results'][0]['artistName']
+    @song_artwork = song['results'][0]['artworkUrl100']
+    @song_url = song['results'][0]['trackViewUrl']
+    # pass data to the view
+    erb :index,
+        locals: {
+          curl: @myip,
+          title: 'Learn C',
+          song_json: @song_pretty,
+          song_preview: @song_preview,
+          song_name: @song_name,
+          song_artist: @song_artist,
+          song_artwork: @song_artwork,
+          song_url: @song_url
+        }, layout: :layout
+  end
+end
+```
+
+### Standalone container
+
+```Dockerfile
+FROM fedora:latest
+
+WORKDIR /app
+
+RUN dnf groupinstall -y 'Development Tools'
+RUN dnf install -y ruby ruby-devel libcurl-devel json-c-devel && gem install bundler
+
+RUN git clone https://github.com/ThrowTheSwitch/Unity.git
+COPY . /app
+RUN sed -i 's/..\/unity\//Unity\/src\//' test.c && sed -i 's/-I..\/unity/-IUnity\/src/' Makefile && \
+    sed -i 's/..\/unity\//Unity\/src\//' Makefile
+
+RUN make && make test && bundle install && bundle exec rspec spec
+
+EXPOSE 9292
+
+ENV RACK_ENV=production 
+
+ENTRYPOINT ["bundle", "exec", "rackup", "--host", "0.0.0.0", "config.ru" ]
+```
+
+😺
+
+### Push to hub.docker.com
+
+To push your work to [hub.docker.com](https://hub.docker.com), use this commands:
+
+```bash
+docker login
+docker tag c-dev you_docker_username/your_repository_name:tag # e.g. docker tag c-dev neosb/curl-app
+docker push your_docker_usrname/you_repository_name:tag
+```
+
+First you login to Docker Hub, then you tag your image with additional tag name (usually `latest` or `0.1.0` - you can tag twice),
+then you simply push to remote repository. There you can have many openly available images, and one private. It saves space on
+your disk.
+
+#### Use GitHub Actions to publish your Docker container to hub.docker.com
+
+```yaml
+name: ci
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          # save this in your GitHub settings
+          username: ${{ secrets.DOCKER_USERNAME }}
+          # get your token from hub.docker.com profile
+          password: ${{ secrets.DOCKER_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: username/image-name:tag
+```
+
+### Git refresher
+
 ## Stack and heap
 
 In computer programming, the terms "stack" and "heap" refer to two different areas of memory that are used to store data 
@@ -1964,22 +2606,22 @@ Here are some examples:
 1. Not checking return values: C functions often return error codes or null pointers to indicate errors or failure.
 Failing to check these return values can lead to undefined behavior or other problems in your program.
 
-2.Using uninitialized variables: Using uninitialized variables can lead to unpredictable behavior, as the value of an
+2. Using uninitialized variables: Using uninitialized variables can lead to unpredictable behavior, as the value of an
 uninitialized variable is undefined.
 
-3.Ignoring compiler warnings: Compiler warnings indicate potential problems in your code that you should fix. Ignoring 
+3. Ignoring compiler warnings: Compiler warnings indicate potential problems in your code that you should fix. Ignoring 
 these warnings can lead to bugs or other issues in your program.
 
 4. Using magic numbers: Magic numbers are hard-coded constants that appear in your code without explanation. Using magic
 numbers can make your code harder to understand and maintain.
 
-5.Not freeing dynamically allocated memory: If you allocate memory dynamically using functions like malloc or calloc, you
+5. Not freeing dynamically allocated memory: If you allocate memory dynamically using functions like malloc or calloc, you
 should free it when you're done with it using the free function. Failing to do so can lead to memory leaks and poor performance.
 
-6.Using unsafe functions: Some C functions are considered unsafe because they can cause buffer overflows or other security
+6. Using unsafe functions: Some C functions are considered unsafe because they can cause buffer overflows or other security
 vulnerabilities if used improperly. Examples include gets, strcpy, and scanf.
 
-7.Not handling errors properly: When your program encounters an error, it's important to handle it properly to avoid
+7. Not handling errors properly: When your program encounters an error, it's important to handle it properly to avoid
 undefined behavior or other problems. This might involve logging an error message, returning an error code, or taking
 some other appropriate action.
 
@@ -2075,38 +2717,4 @@ In this example, the C program continuously writes updates to the pipe every sec
 continuously reads from the pipe and prints the updates. The spawn method is used to execute the C program
 as a separate process, and its out option redirects the program's standard output to the pipe's write end.
 
-## Use GitHub Actions to publish your Docker container to hub.docker.com
-
-```yaml
-name: ci
-
-on:
-  push:
-    branches:
-      - 'main'
-
-jobs:
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      -
-        name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          # save this in your GitHub settings
-          username: ${{ secrets.DOCKER_USERNAME }}
-          # get your token from hub.docker.com profile
-          password: ${{ secrets.DOCKER_TOKEN }}
-      -
-        name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: username/image-name:tag
-```
+## Our own API - Futures/option market in EVE Online

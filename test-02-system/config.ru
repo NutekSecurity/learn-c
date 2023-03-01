@@ -1,2 +1,4 @@
-require "./config/environment"
-run Rack::URLMap.new("/" => Server)
+# frozen_string_literal: true
+
+require './config/environment'
+run Rack::URLMap.new('/' => Server)
