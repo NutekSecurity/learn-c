@@ -1837,7 +1837,7 @@ good job at giving you a primer on programming and development process.
 
 ### Rspec
 
-If you bare stick with me, come on and initialize your rspec testing environment with this command:
+If you want to, stick with me, come on and initialize your rspec testing environment with this command:
 
 ```bash
 bundle exec rspec --init
@@ -2717,4 +2717,30 @@ In this example, the C program continuously writes updates to the pipe every sec
 continuously reads from the pipe and prints the updates. The spawn method is used to execute the C program
 as a separate process, and its out option redirects the program's standard output to the pipe's write end.
 
-## Our own API - Futures/option market in EVE Online
+## Our own API - Futures/options market in EVE Online (Hello Rust!)
+
+I'm sorry to disappoint you, but we no longer will be using C. I know it started to being fun, and that was, because
+we introduced Ruby. And while we introduce Ruby, we should and another R to our team, `Rust`. I don't love this
+language, but it's much easier to use, and since I want to teach you how to write modern code, and the purpose of this
+book is to keep us happy not falling into the niche of hardcore Linux maniacs, I will guide you through the process of
+downloading Rust from it's website and hopefully, make you make this API for brokers (I'm working on proprietary version
+of `The Floor`, `evechange` part that is the code which will be run to implement trading "on the floor". Here, we will
+develop open-source version of it's cousing , `The Broker`, client to the floor trading algorithm that can connect to
+the market. All of this is intended to make use case for my in-game corporation which might grow during the development of
+this package.
+
+Why Rust? I'm not an expert, as far as you might see in the forseable future, the Rust programming language is going to at least
+change the development process of C and C++. We didn't touched C++, and that's the only thing we might miss during our Sinatra
+and Ruby challenges ahead, because they're both object oriented, but C++ i much, much more faster. Why we don't write websites
+in C++? I don't know, but we write servers in C++...
+
+This is just a teaser about what we will do in the far ahead sections of this book. We need to learn Rust first, and by that I mean
+we need to know what macro is, traits and such constructs. I will make notes, and try to enjoy the process of reading and redacting
+required material for our purposes. Bear with me, and I promise, that writing a code will be breeze for you and that with Rust and
+Ruby you will feel at home, you will know when to use which one of them and by the time we finish The Broker library,
+you will be able to make your own recipes.
+
+### Install Rust
+
+To install Rust visit `https://www.rust-lang.org/learn/get-started` and follow on-screen instructions. This will download
+latest version of Rust.
